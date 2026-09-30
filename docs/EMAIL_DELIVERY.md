@@ -20,8 +20,9 @@ remains a Supabase Auth message and is intentionally not editable in the app.
 
 ## Server-only environment variables
 
-Configure these in the Vercel project for Production. Do not expose any of them
-to browser code and do not add `NEXT_PUBLIC_` to their names.
+Configure these in Vercel for the applicable environment. Use branch-scoped
+Preview values for dev and Production values for the live site. Do not expose
+any of them to browser code or add `NEXT_PUBLIC_` to their names.
 
 | Variable | Purpose |
 | --- | --- |
@@ -29,7 +30,7 @@ to browser code and do not add `NEXT_PUBLIC_` to their names.
 | `EMAIL_DELIVERY_EXPECTED_SUPABASE_PROJECT_REF` | Must match the 20-character project ref in `NEXT_PUBLIC_SUPABASE_URL`; prevents a worker consuming the wrong queue. |
 | `EMAIL_DELIVERY_PRODUCTION_SUPABASE_PROJECT_REF` | Required in dev/Preview. Must name Production so dev refuses to run if it is accidentally connected to Production. |
 | `RESEND_API_KEY` | Resend key with sending access; use the least privilege available. |
-| `RESEND_WEBHOOK_SECRET` | Signing secret for the production webhook endpoint. |
+| `RESEND_WEBHOOK_SECRET` | Signing secret for the webhook endpoint in that environment. |
 | `CRON_SECRET` | Random secret of at least 32 characters used as the worker endpoint Bearer token. |
 | `EMAIL_FROM` | Sender on the verified domain, for example `ASWJ College <no-reply@example.org>`. |
 | `EMAIL_REPLY_TO` | Monitored administration address on a safe email header. |
@@ -98,6 +99,38 @@ Vercel references:
 - [Cron job configuration](https://vercel.com/docs/cron-jobs)
 - [Securing cron jobs](https://vercel.com/docs/cron-jobs/manage-cron-jobs)
 - [Cron usage and plan limits](https://vercel.com/docs/cron-jobs/usage-and-pricing)
+
+### Dev Preview on Vercel Hobby
+
+Vercel Cron cannot provide the five-minute dev schedule: it invokes Production
+deployments, while the Hobby plan permits schedules only once per day. Use the
+separate dev Supabase project as the trusted external scheduler.
+
+1. Apply `20260930194412_enable_dev_email_scheduler_extensions.sql`. It enables
+   `pg_cron` and `pg_net`; it does not create a job or store credentials.
+2. In the dev Supabase Vault, create `aswj_email_cron_secret` containing exactly
+   the same value as the branch-scoped Preview `CRON_SECRET`. Never place the
+   secret in scheduler SQL, a URL, logs, documentation, or source control.
+3. Operationally create one job named `aswj-email-delivery-dev`, scheduled as
+   `*/5 * * * *`, that makes an HTTPS `GET` to the stable dev origin followed by
+   `/api/cron/email-delivery`. Build its `Authorization: Bearer ...` header at
+   runtime from the Vault secret. Keep the environment URL, Vault value, and job
+   definition out of migrations so each environment is configured separately.
+4. Before activation, confirm the dev queue and forced test recipient. The first
+   run can immediately submit already queued messages.
+5. Confirm the job is active, inspect `cron.job_run_details`, and verify the
+   matching `net._http_response` contains an HTTP 2xx response. A successful cron
+   run alone only proves that the asynchronous HTTP request was queued. Also
+   confirm the result under **Admin → Email delivery** and in Resend.
+6. To pause processing, deactivate or unschedule `aswj-email-delivery-dev`.
+   Rotate the Vercel and Vault copies of `CRON_SECRET` together, then verify
+   another HTTP 2xx response.
+
+Supabase references:
+
+- [Cron](https://supabase.com/docs/guides/cron)
+- [Vault](https://supabase.com/docs/guides/database/vault)
+- [pg_net responses](https://supabase.com/docs/guides/database/extensions/pg_net#analyzing-responses)
 
 ## Delivery guarantees and failure behavior
 

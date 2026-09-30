@@ -51,4 +51,5 @@ Run `npm run build` for the production compile and route check.
 
 ## Live setup
 
-See `docs/SUPABASE_SETUP.md`, `docs/LIVE_STATUS.md` and `docs/NATIVE_REGISTRATION.md`.
+See `docs/SUPABASE_SETUP.md`, `docs/LIVE_STATUS.md`,
+`docs/NATIVE_REGISTRATION.md` and `docs/EMAIL_DELIVERY.md`.
