@@ -4,6 +4,26 @@ import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '../../../lib/supabase/server';
 import { classTimeMinutes, normalizeClassTime } from '../../../lib/class-time';
 
+type AdminSupabase = Awaited<ReturnType<typeof requireAdmin>>['supabase'];
+
+async function validateTeacherAssignment(
+  supabase: AdminSupabase,
+  teacherId: string | null
+) {
+  if (!teacherId) return;
+
+  const { data: teacher, error } = await supabase
+    .from('profiles')
+    .select('id,role')
+    .eq('id', teacherId)
+    .maybeSingle();
+
+  if (error) throw new Error('The teacher assignment could not be verified.');
+  if (!teacher || !['teacher', 'admin', 'super_admin'].includes(teacher.role)) {
+    throw new Error('Select a valid teacher or administrator for this class.');
+  }
+}
+
 function optionalText(value: FormDataEntryValue | null) {
   const text = String(value ?? '').trim();
   return text || null;
@@ -61,6 +81,7 @@ function readPayload(formData: FormData) {
 export async function createClass(formData: FormData) {
   const { supabase, user } = await requireAdmin();
   const payload = { ...readPayload(formData), active: true };
+  await validateTeacherAssignment(supabase, payload.teacher_id);
 
   const { data, error } = await supabase
     .from('classes')
@@ -84,6 +105,7 @@ export async function createClass(formData: FormData) {
 export async function updateClass(classId: string, formData: FormData) {
   const { supabase, user } = await requireAdmin();
   const payload = readPayload(formData);
+  await validateTeacherAssignment(supabase, payload.teacher_id);
 
   const { data: existing, error: readError } = await supabase
     .from('classes')

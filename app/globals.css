@@ -55,7 +55,8 @@ img { max-width: 100%; }
 .admin-sidebar :where(a,button):focus-visible,
 .public-brand-panel :where(a,button):focus-visible,
 .auth-brand-panel :where(a,button):focus-visible,
-.student-header :where(a,button):focus-visible { outline-color: #f7d886; }
+.student-header :where(a,button):focus-visible,
+.teacher-header :where(a,button):focus-visible { outline-color: #f7d886; }
 
 .skip-link { position: fixed; z-index: 1000; top: 10px; left: 10px; transform: translateY(-160%); border-radius: var(--radius-sm); background: var(--panel); color: var(--brand-deep); padding: 11px 16px; font-weight: 800; box-shadow: var(--shadow-lg); }
 .skip-link:focus { transform: translateY(0); }
@@ -217,6 +218,35 @@ tbody tr:hover { background: #fbfcfb; }
 .auth-switch { margin: 20px 0 0; color: var(--muted); font-size: 14px; text-align: center; }
 .auth-footer { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); text-align: center; }
 .text-link { color: var(--brand); font-weight: 750; text-decoration: underline; }
+
+/* Teacher attendance portal */
+.teacher-portal { min-height: 100dvh; padding: 18px clamp(12px,3vw,30px) 56px; }
+.teacher-header { display: flex; width: min(1220px,100%); align-items: center; justify-content: space-between; gap: 24px; margin: 0 auto; border-radius: 20px; background: var(--brand-deep); padding: 15px 18px; color: #fff; box-shadow: var(--shadow-lg); }
+.teacher-brand { display: flex; min-width: 0; align-items: center; gap: 13px; color: #fff; text-decoration: none; }
+.teacher-brand:hover { color: #fff; }
+.teacher-brand span { min-width: 0; }
+.teacher-brand small, .teacher-brand strong { display: block; }
+.teacher-brand small { color: #cfe2dc; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.teacher-brand strong { margin-top: 2px; font-size: 18px; }
+.teacher-logo { display: block; width: 72px; height: 58px; object-fit: contain; border-radius: 11px; background: #fff; padding: 5px; }
+.teacher-account { display: flex; align-items: center; justify-content: flex-end; gap: 14px; text-align: right; }
+.teacher-account strong, .teacher-account span { display: block; }
+.teacher-account strong { font-size: 14px; }
+.teacher-account span { color: #cfe2dc; font-size: 12px; }
+.teacher-signout { min-width: 94px; border-color: #fff; background: #fff; color: var(--brand-deep); }
+.teacher-signout:hover { background: var(--gold-soft); color: var(--brand-deep); }
+.teacher-main { width: min(1220px,100%); margin: 0 auto; padding: 30px 4px 0; }
+
+/* Shared attendance check-in */
+.checkin-class-summary { padding-top: 24px; }
+.checkin-empty { border: 1px dashed var(--line-strong); border-radius: 14px; background: var(--panel-soft); }
+.checkin-scanner { border: 2px dashed var(--line); border-radius: 14px; padding: 18px; text-align: center; }
+.checkin-scanner video { display: none; width: 100%; max-width: 560px; margin: 0 auto 14px; border-radius: 12px; background: #071c19; }
+.checkin-scanner video.is-active { display: block; }
+.checkin-scanner-actions { justify-content: center; }
+.checkin-manual-entry { max-width: 560px; margin: 18px auto 0; }
+.checkin-manual-actions input { flex: 1 1 320px; }
+.checkin-row-actions .btn { min-width: 82px; }
 
 /* Student portal */
 .student-portal { width: min(1120px,100%); margin: 0 auto; padding: 28px 18px 60px; }
@@ -380,6 +410,28 @@ tbody tr:hover { background: #fbfcfb; }
   .email-template-modal-footer { align-items: stretch; flex-direction: column-reverse; }
   .email-template-modal-footer > .actions { display: grid; grid-template-columns: 1fr 1fr; }
   .email-template-modal-footer > .btn { width: 100%; }
+  .teacher-portal { padding: 10px 10px 42px; }
+  .teacher-header { align-items: flex-start; border-radius: 16px; padding: 13px; }
+  .teacher-logo { width: 58px; height: 50px; }
+  .teacher-brand strong { font-size: 16px; }
+  .teacher-account > div { display: none; }
+  .teacher-main { padding-top: 24px; }
+  .checkin-class-summary { padding-top: 0; }
+  .checkin-scanner { padding: 14px; }
+  .checkin-manual-actions { display: grid; grid-template-columns: 1fr; }
+  .checkin-manual-actions .btn { width: 100%; }
+  .checkin-roll { overflow: visible; border: 0; background: transparent; box-shadow: none; }
+  .checkin-roll table, .checkin-roll tbody, .checkin-roll tr, .checkin-roll td { display: block; width: 100%; }
+  .checkin-roll table { min-width: 0; }
+  .checkin-roll thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .checkin-roll tbody { display: grid; gap: 12px; }
+  .checkin-roll tr { overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); box-shadow: var(--shadow-sm); }
+  .checkin-roll td { display: grid; grid-template-columns: minmax(88px,.45fr) minmax(0,1fr); align-items: center; gap: 12px; border-bottom: 1px solid var(--line); padding: 12px 14px; }
+  .checkin-roll td:last-child { border-bottom: 0; }
+  .checkin-roll td[data-label]::before { color: var(--muted); content: attr(data-label); font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+  .checkin-roll td:not([data-label]) { display: block; }
+  .checkin-row-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .checkin-row-actions .btn { width: 100%; min-height: 48px; }
 }
 @media (max-width:520px) {
   .admin-sidebar { grid-template-columns: auto minmax(0,1fr); }
@@ -404,6 +456,11 @@ tbody tr:hover { background: #fbfcfb; }
   .email-templates-topbar { flex-direction: column; }
   .email-templates-topbar .btn { width: 100%; }
   .email-template-modal-footer > .actions { grid-template-columns: 1fr; }
+  .teacher-header { align-items: center; }
+  .teacher-brand small { display: none; }
+  .teacher-logo { width: 52px; height: 46px; }
+  .teacher-signout { min-width: 84px; }
+  .teacher-main .card { padding: 16px; }
 }
 @media (max-width:390px) {
   .main { padding-right: 12px; padding-left: 12px; }

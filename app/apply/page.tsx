@@ -17,7 +17,11 @@ export default async function ApplyLandingPage() {
 
   const role = String(user?.app_metadata?.role ?? 'student');
   const isStudent = Boolean(user) && role === 'student';
-  const portalHref = ['admin', 'super_admin'].includes(role) ? '/admin' : '/student';
+  const portalHref = ['admin', 'super_admin'].includes(role)
+    ? '/admin'
+    : role === 'teacher'
+      ? '/teacher/check-in'
+      : '/student';
 
   return (
     <main id="main-content" className="public-shell" tabIndex={-1}>

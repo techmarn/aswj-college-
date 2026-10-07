@@ -4,26 +4,11 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { checkInByQr, closeTodayRoll, setManualAttendance } from '../actions/checkin-actions';
 import { formatClassTime } from '../../../lib/class-time';
+import type { CheckInClass, CheckInStudent } from '../../../lib/attendance/check-in-data';
 
-export type CheckInStudent = {
-  enrolmentId: string;
-  studentId: string;
-  name: string;
-  enrolmentStatus: string;
-  attendanceStatus: string | null;
-  checkedInAt: string | null;
-};
+export type { CheckInClass, CheckInStudent } from '../../../lib/attendance/check-in-data';
 
-export type CheckInClass = {
-  id: string;
-  name: string;
-  location: string;
-  startTime: string;
-  endTime: string;
-  sessionId: string | null;
-  sessionCancelled: boolean;
-  students: CheckInStudent[];
-};
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 function badge(status: string | null) {
   if (status === 'present') return 'green';
@@ -33,7 +18,22 @@ function badge(status: string | null) {
   return 'amber';
 }
 
-export default function CheckInClient({ classes, today }: { classes: CheckInClass[]; today: string }) {
+function attendanceLabel(status: string | null) {
+  if (status === 'absent_unexcused') return 'Absent';
+  if (status === 'absent_excused') return 'Excused';
+  if (!status) return 'Not marked';
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+export default function CheckInClient({
+  classes,
+  today,
+  audience = 'admin',
+}: {
+  classes: CheckInClass[];
+  today: string;
+  audience?: 'admin' | 'teacher';
+}) {
   const router = useRouter();
   const [classId, setClassId] = useState(classes[0]?.id ?? '');
   const [scannerOn, setScannerOn] = useState(false);
@@ -44,14 +44,25 @@ export default function CheckInClient({ classes, today }: { classes: CheckInClas
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanLock = useRef(false);
+  const lastScan = useRef<{ token: string; at: number } | null>(null);
 
   const selected = useMemo(() => classes.find((c) => c.id === classId) ?? null, [classes, classId]);
+  const selectedSchedule = selected
+    ? [
+        selected.dayOfWeek === null ? null : DAYS[selected.dayOfWeek],
+        selected.startTime
+          ? `${formatClassTime(selected.startTime)}${selected.endTime ? `–${formatClassTime(selected.endTime)}` : ''}`
+          : null,
+        selected.location || 'No location set',
+      ].filter(Boolean).join(' · ')
+    : '';
 
   const stopScanner = () => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
     setScannerOn(false);
     scanLock.current = false;
+    lastScan.current = null;
   };
 
   useEffect(() => () => {
@@ -60,14 +71,23 @@ export default function CheckInClient({ classes, today }: { classes: CheckInClas
 
   const processToken = (raw: string) => {
     if (!classId || pending || scanLock.current) return;
+    const normalizedToken = raw.trim();
+    const previous = lastScan.current;
+    if (previous?.token === normalizedToken && Date.now() - previous.at < 8_000) return;
+
     scanLock.current = true;
+    lastScan.current = { token: normalizedToken, at: Date.now() };
     setError('');
     setMessage('');
 
     startTransition(async () => {
       try {
-        const result = await checkInByQr(classId, raw);
-        setMessage(`${result.name} checked in successfully.`);
+        const result = await checkInByQr(classId, normalizedToken);
+        setMessage(
+          result.alreadyCheckedIn
+            ? `${result.name} already has attendance recorded as ${attendanceLabel(result.status)}. The original record was kept.`
+            : `${result.name} checked in successfully.`
+        );
         setManualToken('');
         router.refresh();
         window.setTimeout(() => { scanLock.current = false; }, 1400);
@@ -159,7 +179,8 @@ export default function CheckInClient({ classes, today }: { classes: CheckInClas
     <>
       <div className="topbar">
         <div>
-          <h1>QR Check-in</h1>
+          <span className="eyebrow">{audience === 'teacher' ? 'Teacher attendance' : 'Attendance'}</span>
+          <h1>{audience === 'teacher' ? 'Class check-in' : 'QR Check-in'}</h1>
           <p className="subtitle">Scan student QR codes and manage today’s attendance — {today}.</p>
         </div>
       </div>
@@ -175,9 +196,8 @@ export default function CheckInClient({ classes, today }: { classes: CheckInClas
           </div>
           <div>
             {selected && (
-              <div className="small" style={{ paddingTop: 24 }}>
-                {selected.location || 'No location set'}
-                {selected.startTime && ` · ${formatClassTime(selected.startTime)}${selected.endTime ? `–${formatClassTime(selected.endTime)}` : ''}`}
+              <div className="small checkin-class-summary">
+                {selectedSchedule}
                 {' · '}{selected.students.filter((s) => s.attendanceStatus === 'present' || s.attendanceStatus === 'late').length}/{selected.students.filter((s) => s.enrolmentStatus === 'enrolled').length} checked in
               </div>
             )}
@@ -187,27 +207,36 @@ export default function CheckInClient({ classes, today }: { classes: CheckInClas
         {error && <div className="notice" role="alert">{error}</div>}
         {message && <div className="card" role="status" style={{ background: 'var(--brand-soft)', borderColor: 'var(--brand)', marginBottom: 16 }}><strong>{message}</strong></div>}
 
-        {selected?.sessionCancelled ? (
+        {!selected ? (
+          <div className="portal-empty checkin-empty">
+            <strong>{audience === 'teacher' ? 'No classes scheduled today' : 'No active classes'}</strong>
+            <span>
+              {audience === 'teacher'
+                ? 'Only active classes assigned to you and scheduled for today appear here.'
+                : 'Create or reactivate a class before taking attendance.'}
+            </span>
+          </div>
+        ) : selected.sessionCancelled ? (
           <div className="notice"><strong>Session cancelled</strong>Attendance cannot be recorded for this class today.</div>
         ) : (
           <>
-            <div style={{ border:'2px dashed var(--line)', borderRadius:14, padding:18, textAlign:'center' }}>
-              <video ref={videoRef} playsInline muted style={{ display: scannerOn ? 'block' : 'none', width:'100%', maxWidth:560, margin:'0 auto 14px', borderRadius:12 }} />
+            <div className="checkin-scanner">
+              <video ref={videoRef} playsInline muted className={scannerOn ? 'is-active' : undefined} />
               {!scannerOn && <><strong>Camera QR scanner</strong><p className="small">The student presents their ASWJ College Student Portal QR code.</p></>}
-              <div className="actions" style={{ justifyContent:'center' }}>
+              <div className="actions checkin-scanner-actions">
                 {!scannerOn ? (
-                  <button className="btn btn-primary" disabled={!selected} onClick={startScanner}>Start scanner</button>
+                  <button type="button" className="btn btn-primary" disabled={pending} onClick={startScanner}>Start scanner</button>
                 ) : (
-                  <button className="btn btn-outline" onClick={stopScanner}>Stop scanner</button>
+                  <button type="button" className="btn btn-outline" onClick={stopScanner}>Stop scanner</button>
                 )}
               </div>
             </div>
 
-            <div className="field" style={{ maxWidth:560, margin:'18px auto 0' }}>
+            <div className="field checkin-manual-entry">
               <label htmlFor="manual-qr-token">Manual QR token fallback</label>
-              <div className="actions">
-                <input id="manual-qr-token" style={{ flex:1 }} value={manualToken} onChange={(e) => setManualToken(e.target.value)} placeholder="Paste or type QR token" />
-                <button className="btn btn-primary" disabled={!manualToken.trim() || pending} onClick={() => processToken(manualToken)}>Check in</button>
+              <div className="actions checkin-manual-actions">
+                <input id="manual-qr-token" autoComplete="off" value={manualToken} onChange={(e) => setManualToken(e.target.value)} placeholder="Paste or type QR token" />
+                <button type="button" className="btn btn-primary" disabled={!manualToken.trim() || pending} onClick={() => processToken(manualToken)}>Check in</button>
               </div>
               <span className="small">Use this if camera scanning is unavailable.</span>
             </div>
@@ -225,7 +254,7 @@ export default function CheckInClient({ classes, today }: { classes: CheckInClas
               </button>
             )}
           </div>
-          <div className="table-wrap" role="region" aria-label="Today's class roll" tabIndex={0}>
+          <div className="table-wrap checkin-roll" role="region" aria-label="Today's class roll" tabIndex={0}>
             <table>
               <thead><tr><th>Student</th><th>Enrolment</th><th>Attendance</th><th>Manual action</th></tr></thead>
               <tbody>
@@ -233,16 +262,16 @@ export default function CheckInClient({ classes, today }: { classes: CheckInClas
                   <tr><td colSpan={4}><span className="small">No students are enrolled in this class.</span></td></tr>
                 ) : selected.students.map((student) => (
                   <tr key={student.enrolmentId}>
-                    <td><strong>{student.name}</strong></td>
-                    <td><span className={`badge ${student.enrolmentStatus === 'suspended' ? 'red' : 'green'}`}>{student.enrolmentStatus}</span></td>
-                    <td><span className={`badge ${badge(student.attendanceStatus)}`}>{student.attendanceStatus === 'absent_unexcused' ? 'Absent' : student.attendanceStatus === 'absent_excused' ? 'Excused' : student.attendanceStatus ?? 'Not marked'}</span></td>
-                    <td>
+                    <td data-label="Student"><strong>{student.name}</strong></td>
+                    <td data-label="Enrolment"><span className={`badge ${student.enrolmentStatus === 'suspended' ? 'red' : 'green'}`}>{student.enrolmentStatus}</span></td>
+                    <td data-label="Attendance"><span className={`badge ${badge(student.attendanceStatus)}`}>{attendanceLabel(student.attendanceStatus)}</span></td>
+                    <td data-label="Manual action">
                       {student.enrolmentStatus === 'suspended' ? <span className="small">Suspended</span> : (
-                        <div className="actions">
-                          <button disabled={pending} className="btn btn-primary" onClick={() => manualAttendance(student,'present')}>Present</button>
-                          <button disabled={pending} className="btn btn-secondary" onClick={() => manualAttendance(student,'late')}>Late</button>
-                          <button disabled={pending} className="btn btn-outline" onClick={() => manualAttendance(student,'excused')}>Excused</button>
-                          <button disabled={pending} className="btn btn-outline" onClick={() => manualAttendance(student,'absent')}>Absent</button>
+                        <div className="actions checkin-row-actions">
+                          <button type="button" disabled={pending} className="btn btn-primary" onClick={() => manualAttendance(student,'present')}>Present</button>
+                          <button type="button" disabled={pending} className="btn btn-secondary" onClick={() => manualAttendance(student,'late')}>Late</button>
+                          <button type="button" disabled={pending} className="btn btn-outline" onClick={() => manualAttendance(student,'excused')}>Excused</button>
+                          <button type="button" disabled={pending} className="btn btn-outline" onClick={() => manualAttendance(student,'absent')}>Absent</button>
                         </div>
                       )}
                     </td>

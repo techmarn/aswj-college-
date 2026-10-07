@@ -1,9 +1,20 @@
-# ASWJ College application — v0.8
+# ASWJ College application — v0.9
 
-Two connected interfaces support the college registration and attendance workflow:
+Three connected interfaces support the college registration and attendance workflow:
 
 - **ASWJ College Admin** — applications, classes, waitlists, attendance, QR check-in, consecutive-absence reviews, suspension/reinstatement, notifications and audit history.
+- **ASWJ College Teacher Attendance** — a mobile-first roll and QR check-in screen limited to each teacher's assigned classes.
 - **ASWJ College Student Portal** — application outcomes, per-class enrolment and attendance status, warnings, notifications and QR identity.
+
+## v0.9 changes
+
+- Dedicated teacher portal at `/teacher/check-in`, with automatic role-based login routing.
+- Teachers can see and record attendance only for active classes assigned to them with a complete schedule for the current Sydney date.
+- Attendance-safe roster API exposes names and roll state without student contact, guardian, date-of-birth, medical or learning information.
+- Idempotent QR scans and roll closure prevent duplicate scans, overwritten check-in times and duplicate closure audit events.
+- Teachers cannot change a closed roll; administrators retain correction access.
+- Responsive Android-friendly scanner, manual fallback and 48-pixel attendance controls.
+- Server-side validation prevents a class from being assigned to a non-staff profile.
 
 ## v0.8 changes
 
@@ -52,4 +63,5 @@ Run `npm run build` for the production compile and route check.
 ## Live setup
 
 See `docs/SUPABASE_SETUP.md`, `docs/LIVE_STATUS.md`,
-`docs/NATIVE_REGISTRATION.md` and `docs/EMAIL_DELIVERY.md`.
+`docs/NATIVE_REGISTRATION.md`, `docs/TEACHER_ATTENDANCE.md` and
+`docs/EMAIL_DELIVERY.md`.

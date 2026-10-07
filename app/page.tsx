@@ -7,5 +7,7 @@ export default async function HomePage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/apply');
   const role = String(user.app_metadata?.role ?? 'student');
-  redirect(['admin', 'super_admin'].includes(role) ? '/admin' : '/student');
+  if (['admin', 'super_admin'].includes(role)) redirect('/admin');
+  if (role === 'teacher') redirect('/teacher/check-in');
+  redirect('/student');
 }

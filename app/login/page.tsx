@@ -45,6 +45,7 @@ export default async function LoginPage({
   else if (error === 'signup_already_sent') message = 'A confirmation email was already requested. Check your inbox and junk folder before trying again.';
   else if (error === 'confirmation_failed') message = 'We could not complete sign-in from that confirmation link. Your email may already be confirmed, so try signing in or contact administration.';
   else if (error === 'confirm_required') message = 'Confirm your email address before applying for a class.';
+  else if (error === 'forbidden') message = 'This account does not have access to that portal.';
   else if (error) message = 'Please check the details and try again.';
 
   const success = created || passwordReset;
@@ -77,7 +78,7 @@ export default async function LoginPage({
             <p className="subtitle">
               {signupMode
                 ? 'Create an account before completing your first class application.'
-                : 'Sign in to the ASWJ College Admin or Student Portal.'}
+                : 'Sign in to the ASWJ College staff or Student Portal.'}
             </p>
           </header>
 

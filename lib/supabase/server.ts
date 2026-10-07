@@ -44,14 +44,16 @@ export async function createSupabaseServerClient(setResponseHeaders?: ResponseHe
   );
 }
 
-export async function requireAdmin() {
+type StaffRole = 'teacher' | 'admin' | 'super_admin';
+
+async function requireStaffRole(allowedRoles: readonly StaffRole[], errorMessage: string) {
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) throw new Error('Authentication required.');
 
   const role = String(user.app_metadata?.role ?? '');
-  if (!['admin', 'super_admin'].includes(role)) {
-    throw new Error('Administrator access required.');
+  if (!allowedRoles.includes(role as StaffRole)) {
+    throw new Error(errorMessage);
   }
 
   const { data: profile } = await supabase
@@ -61,4 +63,18 @@ export async function requireAdmin() {
     .maybeSingle();
 
   return { supabase, user, profile, role };
+}
+
+export async function requireAdmin() {
+  return requireStaffRole(
+    ['admin', 'super_admin'],
+    'Administrator access required.'
+  );
+}
+
+export async function requireAttendanceStaff() {
+  return requireStaffRole(
+    ['teacher', 'admin', 'super_admin'],
+    'Teacher or administrator access required.'
+  );
 }

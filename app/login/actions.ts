@@ -23,6 +23,7 @@ function loginRedirect(error: string, nextPath: string | null, signupMode = fals
 
 function roleDestination(role: string, nextPath: string | null) {
   if (['admin', 'super_admin'].includes(role)) return '/admin';
+  if (role === 'teacher') return '/teacher/check-in';
   if (role === 'student' && nextPath) return nextPath;
   return '/student';
 }

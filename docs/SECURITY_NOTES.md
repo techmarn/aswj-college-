@@ -1,6 +1,9 @@
 # Security notes
 
 - Admin mutations must call `requireAdmin()` and verify the signed-in user has `admin` or `super_admin` role.
+- Teacher attendance mutations must call `requireAttendanceStaff()` and remain subject to database-level class-assignment checks. A teacher role never grants generic Admin access.
+- Staff roles must come from trusted Auth `app_metadata`; never authorise from user-editable `user_metadata` alone.
+- Teacher rosters must use the narrow attendance RPC and must not expose student email, phone, DOB, guardian, emergency, medical, allergy or learning information.
 - The Supabase service-role key is used only by server-side integration endpoints and must never be exposed in `NEXT_PUBLIC_*` environment variables.
 - Microsoft Forms ingestion requires a long random shared secret in the `x-aswj-forms-secret` header.
 - Native registration derives identity from the confirmed signed-in Auth user and never accepts a submitted student ID, application status or arbitrary class UUID.
