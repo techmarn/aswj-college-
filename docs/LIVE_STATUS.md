@@ -1,7 +1,8 @@
-# ASWJ College live status — v0.9
+# ASWJ College live status — v0.10
 
-The production site remains on the existing release. The v0.9 teacher attendance
-portal and its database protections are being verified in the separate dev environment.
+The production site remains on the existing release. The v0.10 wallet-pass work,
+teacher attendance portal and database protections are being verified in the
+separate dev environment.
 
 ## Production live
 - Students / profiles
@@ -33,7 +34,7 @@ portal and its database protections are being verified in the separate dev envir
 - Confirmed-account identity, atomic duplicate protection and pending Admin Applications hand-off
 - Protected one-to-one native registration details loaded only for an authorised administrator
 
-## Dev preview — v0.9
+## Dev preview — v0.10
 
 - Dedicated, role-routed teacher attendance portal at `/teacher/check-in`
 - Assigned-class-only teacher roster and attendance mutations enforced in the database
@@ -42,6 +43,10 @@ portal and its database protections are being verified in the separate dev envir
 - Idempotent QR check-in, manual marking and roll closure with preserved audit history
 - Closed-roll protection for teachers with administrator correction access preserved
 - Mobile-first scanner, roster fallback and large attendance controls for Android tablets
+- Authenticated Apple Wallet and Google Wallet student-pass generation using the existing QR identity
+- Environment-isolated pass identifiers, credentials and Supabase project-ref safety checks
+- Student wallet payloads limited to the student's name and opaque check-in QR; live class details stay in the portal
+- Provider credentials and real-device Apple/Android installation still require the manual dev setup in `WALLET_PASSES.md`
 
 ## First admin bootstrap
 Create an account through `/login?mode=signup`. After the user confirms the account,

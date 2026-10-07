@@ -308,6 +308,26 @@ tbody tr:hover { background: #fbfcfb; }
 .qr-card { text-align: center; }
 .qr-card > p { max-width: 620px; margin: 8px auto; color: var(--muted); font-size: 14px; }
 .qr-card img { display: block; width: 280px; max-width: 85%; height: auto; margin: 18px auto 4px; border-radius: 12px; }
+.student-pass-card { scroll-margin-top: 24px; overflow: hidden; padding: clamp(22px,4vw,34px); border-top: 5px solid var(--gold); }
+.student-pass-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.student-pass-heading h2 { margin: 4px 0 0; color: var(--brand-deep); font-size: 24px; }
+.student-pass-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(220px,320px); align-items: start; gap: clamp(24px,5vw,56px); margin-top: 22px; }
+.student-pass-details { min-width: 0; }
+.student-pass-details > p { max-width: 68ch; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+.student-pass-classes { margin-top: 22px; }
+.student-pass-classes ul { display: grid; gap: 10px; margin: 8px 0 0; padding: 0; list-style: none; }
+.student-pass-classes li { display: grid; gap: 3px; border-left: 3px solid var(--brand); padding: 5px 0 5px 12px; }
+.student-pass-classes li strong { color: var(--brand-deep); font-size: 14px; }
+.student-pass-classes li span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+.student-pass-qr { display: grid; min-height: 220px; place-items: center; border-radius: 18px; background: #f4f7f5; padding: 18px; }
+.student-pass-qr > img { display: block; width: 100%; max-width: 280px; height: auto; border-radius: 12px; }
+.student-pass-qr .portal-alert { margin-top: 0; }
+.wallet-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 24px; }
+.apple-wallet-badge-link, .google-wallet-link { display: inline-flex; min-height: 50px; align-items: center; justify-content: center; border-radius: 8px; }
+.apple-wallet-badge-link:focus-visible, .google-wallet-link:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.apple-wallet-badge { display: block; width: auto; max-width: 100%; height: 50px; }
+.google-wallet-link { min-width: 283px; }
+.google-wallet-badge { display: block; width: 283px; max-width: 100%; height: auto; }
 .portal-error { max-width: 720px; margin: 12vh auto 0; padding: 38px; text-align: center; }
 .portal-error h1 { margin: 0 0 10px; color: var(--brand-deep); font-size: 30px; }
 .portal-error .btn { margin-top: 20px; }
@@ -400,6 +420,8 @@ tbody tr:hover { background: #fbfcfb; }
   .notification-item > form { grid-column: 2; }
   .notification-title-row { display: grid; gap: 4px; }
   .attendance-layout { grid-template-columns: 1fr; }
+  .student-pass-grid { grid-template-columns: 1fr; }
+  .student-pass-qr { grid-row: 1; width: min(100%,360px); justify-self: center; }
   .attendance-stats { grid-template-columns: 110px 1fr; }
   .portal-section-head, .section-head { align-items: flex-start; flex-direction: column; }
   .enrolment-card { padding: 19px; }
@@ -453,6 +475,9 @@ tbody tr:hover { background: #fbfcfb; }
   .attendance-stats dl div { padding: 8px 5px; text-align: center; }
   .form-actions { display: grid; }
   .form-actions .btn { width: 100%; }
+  .wallet-actions { display: grid; }
+  .apple-wallet-badge-link, .google-wallet-link { width: 100%; min-width: 0; }
+  .google-wallet-badge { width: min(283px,100%); }
   .email-templates-topbar { flex-direction: column; }
   .email-templates-topbar .btn { width: 100%; }
   .email-template-modal-footer > .actions { grid-template-columns: 1fr; }

@@ -64,7 +64,7 @@ export const DEFAULT_EMAIL_TEMPLATES: Record<EmailTemplateKey, EmailTemplateDefi
     subjectTemplate: 'Your ASWJ College application was accepted',
     previewTemplate: 'Your application for {{class_label}} has been accepted.',
     headingTemplate: 'Application accepted',
-    bodyTemplate: 'Assalamu alaikum {{first_name}},\n\nYour application for {{class_label}} has been accepted.\n\nYour active class enrolment and available class details are shown in the Student Portal.',
+    bodyTemplate: 'Assalamu alaikum {{first_name}},\n\nYour application for {{class_label}} has been accepted.\n\nOpen the Student Portal to view your active enrolment and add your student pass to Apple Wallet or Google Wallet when available.',
     buttonLabel: 'Open Student Portal',
   },
   application_waitlisted: {

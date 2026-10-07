@@ -15,6 +15,7 @@ import {
   PortalNotification,
 } from './portal-data';
 import { formatClassTime } from '../../lib/class-time';
+import { getWalletAvailability } from '../../lib/wallet/config';
 import PortalAutoRefresh from './PortalAutoRefresh';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -201,11 +202,13 @@ export default async function StudentPortal({
   searchParams: Promise<{
     applied?: string | string[];
     already?: string | string[];
+    wallet?: string | string[];
   }>;
 }) {
   const params = await searchParams;
   const applied = (Array.isArray(params.applied) ? params.applied[0] : params.applied) === '1';
   const already = (Array.isArray(params.already) ? params.already[0] : params.already) === '1';
+  const walletStatus = Array.isArray(params.wallet) ? params.wallet[0] : params.wallet;
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) redirect('/login');
@@ -220,6 +223,9 @@ export default async function StudentPortal({
       })
     : null;
   const name = `${data.profile?.firstName ?? ''} ${data.profile?.lastName ?? ''}`.trim() || 'Student';
+  const walletAvailability = getWalletAvailability();
+  const activeEnrolments = data.enrolments.filter((enrolment) => enrolment.status === 'enrolled');
+  const walletEligible = Boolean(qrImage && activeEnrolments.length);
   const unread = data.unreadNotificationCount;
   const currentEnrolments = data.enrolments.filter((enrolment) =>
     ['enrolled', 'suspended'].includes(enrolment.status)
@@ -262,6 +268,25 @@ export default async function StudentPortal({
         <div className="portal-alert warning" role="status">
           <strong>Application already received</strong>
           <span>Your existing application has not been changed. Its current status appears below.</span>
+        </div>
+      )}
+
+      {walletStatus === 'not_eligible' && (
+        <div className="portal-alert warning" role="status">
+          <strong>Your wallet pass is not ready yet.</strong>
+          <span>A pass becomes available after you have an active class enrolment and student QR.</span>
+        </div>
+      )}
+      {['apple_setup', 'google_setup'].includes(walletStatus ?? '') && (
+        <div className="portal-alert warning" role="status">
+          <strong>This wallet option is still being set up.</strong>
+          <span>Your enrolment and student QR have not been changed. Please try again after administration completes the setup.</span>
+        </div>
+      )}
+      {['apple_failed', 'google_failed'].includes(walletStatus ?? '') && (
+        <div className="portal-alert danger" role="alert">
+          <strong>Your wallet pass could not be created.</strong>
+          <span>Your enrolment and student QR have not been changed. Please try again or contact ASWJ College administration.</span>
         </div>
       )}
 
@@ -439,21 +464,90 @@ export default async function StudentPortal({
         )}
       </section>
 
-      <section className="portal-section card qr-card">
-        <span className="small">Class check-in</span>
-        <h2>Your student QR</h2>
-        <p>
-          Present this code to the class administrator when checking in. It contains a
-          private random token, not your personal details.
-        </p>
-        {qrImage ? (
-          <img src={qrImage} alt="Student check-in QR code" />
-        ) : (
-          <div className="portal-alert warning">
-            <strong>Your QR code could not be issued yet.</strong>
-            <span>Contact ASWJ College administration for help.</span>
+      <section id="student-pass" className="portal-section card student-pass-card">
+        <div className="student-pass-heading">
+          <div>
+            <span className="small">Class check-in</span>
+            <h2>Your student pass</h2>
           </div>
-        )}
+          <span className={`badge ${walletEligible ? 'green' : 'amber'}`}>
+            {walletEligible ? 'Ready' : 'Pending'}
+          </span>
+        </div>
+
+        <div className="student-pass-grid">
+          <div className="student-pass-details">
+            <p>
+              Add this pass to your phone or present the QR code below. The code contains
+              a private random token, not your personal details.
+            </p>
+
+            {activeEnrolments.length > 0 && (
+              <div className="student-pass-classes">
+                <span className="small">Active {activeEnrolments.length === 1 ? 'class' : 'classes'}</span>
+                <ul>
+                  {activeEnrolments.map((enrolment) => (
+                    <li key={enrolment.id}>
+                      <strong>{className(enrolment.classInfo.name, enrolment.classInfo.term)}</strong>
+                      {schedule(enrolment) && <span>{schedule(enrolment)}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {walletEligible ? (
+              <>
+                <div className="wallet-actions" aria-label="Add student pass to a mobile wallet">
+                  {walletAvailability.apple && (
+                    <a className="apple-wallet-badge-link" href="/api/student/wallet/apple">
+                      <img
+                        className="apple-wallet-badge"
+                        src="/wallet/add-to-apple-wallet.svg"
+                        alt="Add to Apple Wallet"
+                        width="160"
+                        height="50"
+                      />
+                    </a>
+                  )}
+                  {walletAvailability.google && (
+                    <a className="google-wallet-link" href="/api/student/wallet/google">
+                      <img
+                        className="google-wallet-badge"
+                        src="/wallet/add-to-google-wallet.svg"
+                        alt="Add to Google Wallet"
+                        width="283"
+                        height="50"
+                      />
+                    </a>
+                  )}
+                </div>
+                {!walletAvailability.apple && !walletAvailability.google && (
+                  <div className="portal-alert warning">
+                    <strong>Mobile wallet setup is still being completed.</strong>
+                    <span>You can use the student QR below for check-in in the meantime.</span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="portal-alert warning">
+                <strong>Your mobile wallet pass is not available yet.</strong>
+                <span>It will become available after your application is accepted and your class enrolment is active.</span>
+              </div>
+            )}
+          </div>
+
+          <div className="student-pass-qr">
+            {qrImage ? (
+              <img src={qrImage} alt="Student check-in QR code" />
+            ) : (
+              <div className="portal-alert warning">
+                <strong>Your QR code could not be issued yet.</strong>
+                <span>Contact ASWJ College administration for help.</span>
+              </div>
+            )}
+          </div>
+        </div>
       </section>
     </main>
   );

@@ -1,10 +1,19 @@
-# ASWJ College application — v0.9
+# ASWJ College application — v0.10
 
 Three connected interfaces support the college registration and attendance workflow:
 
 - **ASWJ College Admin** — applications, classes, waitlists, attendance, QR check-in, consecutive-absence reviews, suspension/reinstatement, notifications and audit history.
 - **ASWJ College Teacher Attendance** — a mobile-first roll and QR check-in screen limited to each teacher's assigned classes.
-- **ASWJ College Student Portal** — application outcomes, per-class enrolment and attendance status, warnings, notifications and QR identity.
+- **ASWJ College Student Portal** — application outcomes, per-class enrolment and attendance status, warnings, notifications, QR identity and Apple/Google Wallet student passes.
+
+## v0.10 changes
+
+- Authenticated, on-demand Apple Wallet and Google Wallet student passes for accepted students.
+- One opaque pass identity per student, issued only with a current active enrolment and backed by the existing QR attendance token.
+- No email, phone, date-of-birth, guardian, medical, allergy or learning data in wallet payloads.
+- Dev/Production safety rails for provider credentials, environment URLs and Supabase project refs.
+- Student Portal wallet actions with the official Google Wallet button and an unchanged QR fallback.
+- Next.js 16.4.0 security update and zero known npm audit findings at verification time.
 
 ## v0.9 changes
 
@@ -64,4 +73,5 @@ Run `npm run build` for the production compile and route check.
 
 See `docs/SUPABASE_SETUP.md`, `docs/LIVE_STATUS.md`,
 `docs/NATIVE_REGISTRATION.md`, `docs/TEACHER_ATTENDANCE.md` and
-`docs/EMAIL_DELIVERY.md`.
+`docs/EMAIL_DELIVERY.md`. Wallet provider setup and device testing are in
+`docs/WALLET_PASSES.md`.

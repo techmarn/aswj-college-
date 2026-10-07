@@ -1,26 +1,30 @@
 {
   "name": "aswj-college-app",
   "private": true,
-  "version": "0.9.0",
+  "version": "0.10.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:wallet": "node --conditions=react-server --import tsx --test tests/wallet/*.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.4",
     "@supabase/supabase-js": "2.111.0",
-    "next": "16.3.0",
+    "next": "16.4.0",
+    "passmint": "0.6.0",
     "qrcode": "1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "resend": "6.20.0"
+    "resend": "6.20.0",
+    "server-only": "0.0.1"
   },
   "devDependencies": {
     "@types/node": "24.3.0",
     "@types/qrcode": "1.5.6",
     "@types/react": "19.1.10",
     "@types/react-dom": "19.1.7",
+    "tsx": "4.23.15",
     "typescript": "5.9.2"
   }
 }
