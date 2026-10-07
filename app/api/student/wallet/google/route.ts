@@ -5,18 +5,32 @@ import { loadAuthenticatedStudentPass } from '../../../../../lib/wallet/request'
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'private, no-store, max-age=0',
+  'Pragma': 'no-cache',
+  'Referrer-Policy': 'no-referrer',
+  'X-Content-Type-Options': 'nosniff',
+};
+
+function privateRedirect(destination: URL) {
+  return new Response(null, {
+    status: 303,
+    headers: { ...NO_STORE_HEADERS, 'Location': destination.toString() },
+  });
+}
+
 function portalRedirect(request: Request, status: string) {
   const destination = new URL('/student', request.url);
   destination.searchParams.set('wallet', status);
   destination.hash = 'student-pass';
-  return Response.redirect(destination, 303);
+  return privateRedirect(destination);
 }
 
 export async function GET(request: Request) {
   try {
     const student = await loadAuthenticatedStudentPass();
     if (student.state === 'unauthenticated') {
-      return Response.redirect(new URL('/login', request.url), 303);
+      return privateRedirect(new URL('/login', request.url));
     }
     if (student.state !== 'ready') {
       return portalRedirect(request, 'not_eligible');
@@ -34,11 +48,8 @@ export async function GET(request: Request) {
     return new Response(null, {
       status: 303,
       headers: {
-        'Cache-Control': 'private, no-store, max-age=0',
+        ...NO_STORE_HEADERS,
         'Location': saveUrl,
-        'Pragma': 'no-cache',
-        'Referrer-Policy': 'no-referrer',
-        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch {
