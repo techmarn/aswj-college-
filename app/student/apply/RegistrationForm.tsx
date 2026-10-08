@@ -379,7 +379,7 @@ export default function RegistrationForm({
         <div className="registration-section-heading">
           <span className="section-number" aria-hidden="true">3</span>
           <div>
-            <span className="section-kicker">Step 3 of 5 · Optional</span>
+            <span className="section-kicker">Step 3 of 5 · Required for kids’ classes only</span>
             <h2 id="guardian-heading">Guardian details</h2>
             <p className="section-description">If these details apply, complete both fields.</p>
           </div>
