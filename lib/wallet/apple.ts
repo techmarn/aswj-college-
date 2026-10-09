@@ -80,16 +80,21 @@ export async function buildAppleStudentPass(
     serialNumber,
     teamIdentifier: config.teamIdentifier,
     organizationName: 'ASWJ College',
-    description: 'ASWJ College student pass',
+    description: 'ASWJ College student identity and class check-in pass',
     logoText: 'ASWJ College',
     sharingProhibited: true,
     colors: {
       background: '#063c38',
       foreground: '#ffffff',
-      label: '#d9e8e3',
+      label: '#f7d886',
     },
     images: {
       icon: {
+        x1: { bytes: assets.icon },
+        x2: { bytes: assets.icon2x },
+        x3: { bytes: assets.icon3x },
+      },
+      logo: {
         x1: { bytes: assets.icon },
         x2: { bytes: assets.icon2x },
         x3: { bytes: assets.icon3x },
@@ -99,7 +104,7 @@ export async function buildAppleStudentPass(
       format: 'qr',
       message: data.qrValue,
       messageEncoding: 'utf-8',
-      altText: 'ASWJ student check-in',
+      altText: 'Class check-in',
     }],
   });
 
@@ -119,20 +124,32 @@ export async function buildAppleStudentPass(
     })
     .secondaryField({
       key: 'pass-type',
-      label: 'PASS',
-      value: 'Student check-in',
+      label: 'PASS TYPE',
+      value: 'STUDENT',
     })
     .auxiliaryField({
-      key: 'verification',
-      label: 'STATUS',
-      value: 'Verified at check-in',
+      key: 'check-in',
+      label: 'CHECK-IN',
+      value: 'SHOW QR',
     });
 
-  builder.backField({
-    key: 'check-in-help',
-    label: 'Class Check-in',
-    value: 'Present the QR code at the classroom entrance. Current class, schedule and enrolment status are always verified securely by ASWJ College.',
-  });
+  builder
+    .backField({
+      key: 'check-in-help',
+      label: 'HOW TO CHECK IN',
+      value: 'Present this QR code at the classroom entrance. ASWJ College staff will verify your current enrolment before recording attendance.',
+    })
+    .backField({
+      key: 'student-portal',
+      label: 'STUDENT PORTAL',
+      value: `${config.appBaseUrl}/student`,
+      dataDetectorTypes: ['link'],
+    })
+    .backField({
+      key: 'pass-security',
+      label: 'PASS SECURITY',
+      value: 'If this pass is lost or unavailable, contact ASWJ College administration so the check-in code can be replaced.',
+    });
 
   return builder.sign(material);
 }

@@ -141,15 +141,19 @@ active QR token.
    changeable timetable.
 2. Apple pass downloads only while signed in as that student and installs on an
    iPhone.
-3. Google save link opens only while signed in and installs for an approved
+3. Apple pass shows the ASWJ mark and College name, the student's name as the
+   primary field, `PASS TYPE — STUDENT`, `CHECK-IN — SHOW QR`, and the clearly
+   visible `DEV TEST` header. Its back links to the current Student Portal and
+   explains check-in and lost-pass security.
+4. Google save link opens only while signed in and installs for an approved
    Google test account.
-4. Neither pass contains email, phone, date of birth, guardian or wellbeing
+5. Neither pass contains email, phone, date of birth, guardian or wellbeing
    data.
-5. QR scan records the correct student in the correct active class.
-6. Repeating the scan does not create a duplicate attendance record.
-7. A student cannot generate another student's pass by changing a URL.
-8. Signing out makes both wallet routes return to login.
-9. Suspending or withdrawing the only enrolment makes the pass unavailable in
+6. QR scan records the correct student in the correct active class.
+7. Repeating the scan does not create a duplicate attendance record.
+8. A student cannot generate another student's pass by changing a URL.
+9. Signing out makes both wallet routes return to login.
+10. Suspending or withdrawing the only enrolment makes the pass unavailable in
    the portal and makes its existing QR fail class eligibility at the scanner.
 
 Do not enable Production until both device paths and the rejection cases pass

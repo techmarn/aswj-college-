@@ -152,17 +152,56 @@ test('Apple Wallet output is a signed pkpass containing the expected student QR 
     await writeFile(passPath, bytes);
     execFileSync('unzip', ['-t', passPath], { stdio: 'pipe' });
     const archiveList = execFileSync('unzip', ['-Z1', passPath], { encoding: 'utf8' });
-    for (const required of ['pass.json', 'manifest.json', 'signature', 'icon.png', 'icon@2x.png', 'icon@3x.png']) {
+    for (const required of [
+      'pass.json',
+      'manifest.json',
+      'signature',
+      'icon.png',
+      'icon@2x.png',
+      'icon@3x.png',
+      'logo.png',
+      'logo@2x.png',
+      'logo@3x.png',
+    ]) {
       assert.match(archiveList, new RegExp(`(^|\\n)${required.replace('.', '\\.')}($|\\n)`));
     }
 
     const passJson = JSON.parse(execFileSync('unzip', ['-p', passPath, 'pass.json'], { encoding: 'utf8' }));
     assert.equal(passJson.passTypeIdentifier, config.passTypeIdentifier);
     assert.equal(passJson.teamIdentifier, config.teamIdentifier);
+    assert.equal(passJson.organizationName, 'ASWJ College');
+    assert.equal(passJson.logoText, 'ASWJ College');
     assert.equal(passJson.sharingProhibited, true);
+    assert.equal(passJson.backgroundColor, 'rgb(6, 60, 56)');
+    assert.equal(passJson.foregroundColor, 'rgb(255, 255, 255)');
+    assert.equal(passJson.labelColor, 'rgb(247, 216, 134)');
     assert.equal(passJson.barcodes[0].message, QR_VALUE);
+    assert.equal(passJson.barcodes[0].altText, 'Class check-in');
     assert.equal(passJson.serialNumber.includes(STUDENT_ID), false);
+    assert.deepEqual(passJson.generic.headerFields[0], {
+      key: 'environment',
+      label: 'ENVIRONMENT',
+      value: 'DEV TEST',
+    });
     assert.equal(passJson.generic.primaryFields[0].value, passData.studentName);
+    assert.deepEqual(passJson.generic.secondaryFields[0], {
+      key: 'pass-type',
+      label: 'PASS TYPE',
+      value: 'STUDENT',
+    });
+    assert.deepEqual(passJson.generic.auxiliaryFields[0], {
+      key: 'check-in',
+      label: 'CHECK-IN',
+      value: 'SHOW QR',
+    });
+    assert.equal(passJson.generic.backFields[0].label, 'HOW TO CHECK IN');
+    assert.deepEqual(passJson.generic.backFields[1], {
+      key: 'student-portal',
+      label: 'STUDENT PORTAL',
+      value: `${config.appBaseUrl}/student`,
+      dataDetectorTypes: ['PKDataDetectorTypeLink'],
+    });
+    assert.equal(passJson.generic.backFields[2].label, 'PASS SECURITY');
 
     const serialized = JSON.stringify(passJson).toLowerCase();
     assert.equal(serialized.includes('brothers shariah level 1'), false);
