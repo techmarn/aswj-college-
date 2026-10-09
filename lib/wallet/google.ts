@@ -19,6 +19,7 @@ const GOOGLE_WALLET_CLASSES_URL =
   'https://walletobjects.googleapis.com/walletobjects/v1/genericClass';
 const GOOGLE_WALLET_SCOPE =
   'https://www.googleapis.com/auth/wallet_object.issuer';
+const GOOGLE_DEV_OBJECT_VERSION = 'v2';
 
 export type GoogleStudentPassObject = Record<string, unknown> & {
   id: string;
@@ -118,7 +119,8 @@ export function buildGoogleStudentPassObject(
   const objectId = `${config.issuerId}.${googleWalletObjectSuffix(
     data.studentId,
     config.environment,
-    config.idSecret
+    config.idSecret,
+    config.environment === 'dev' ? GOOGLE_DEV_OBJECT_VERSION : undefined
   )}`;
   const portalUrl = new URL('/student', config.appBaseUrl).toString();
 
@@ -126,7 +128,7 @@ export function buildGoogleStudentPassObject(
     id: objectId,
     classId: config.classId,
     state: 'ACTIVE',
-    genericType: 'GENERIC_STUDENT_CARD',
+    genericType: 'GENERIC_OTHER',
     cardTitle: localized('ASWJ College'),
     subheader: localized(
       config.environment === 'dev' ? 'Student pass · Dev' : 'Student pass'
@@ -268,7 +270,6 @@ async function signedJwt(
     aud: 'google',
     typ: 'savetowallet',
     iat: issuedAt,
-    exp: issuedAt + 10 * 60,
     origins: [config.appHostname],
     payload: {
       genericObjects: [{

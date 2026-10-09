@@ -115,7 +115,8 @@ test('Google Wallet object is branded, upserted and issued by a short reference-
     assert.deepEqual('body' in requests[2] ? requests[2].body : null, expectedObject);
 
     assert.equal(expectedObject.classId, config.classId);
-    assert.equal(expectedObject.genericType, 'GENERIC_STUDENT_CARD');
+    assert.equal(expectedObject.genericType, 'GENERIC_OTHER');
+    assert.match(expectedObject.id, /^123456789012\.aswj_student_dev_v2_[a-f0-9]{32}$/);
     assert.equal(expectedObject.hexBackgroundColor, '#063c38');
     assert.deepEqual(expectedObject.cardTitle, {
       defaultValue: { language: 'en-AU', value: 'ASWJ College' },
@@ -172,6 +173,7 @@ test('Google Wallet object is branded, upserted and issued by a short reference-
 
     const payload = decodeJwtPayload(jwt);
     assert.equal(payload.iss, config.clientEmail);
+    assert.equal('exp' in payload, false);
     assert.deepEqual(payload.origins, [config.appHostname]);
     assert.equal(payload.payload.genericObjects.length, 1);
     assert.deepEqual(payload.payload.genericObjects[0], {

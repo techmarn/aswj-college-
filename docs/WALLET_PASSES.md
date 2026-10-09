@@ -120,12 +120,12 @@ The server authenticates the student, then creates or updates that student's
 Google Wallet GenericObject through the Google Wallet REST API. The object
 references the pre-created dev Generic Class above. Only after that succeeds
 does the app sign a short save JWT containing the existing object ID and class
-ID. The save JWT does not repeat the full student object or expose provider
-credentials to the browser.
+ID. The JWT uses Google's documented Save-to-Wallet claim set and does not
+repeat the full student object or expose provider credentials to the browser.
 
 The Google pass presentation includes:
 
-- Google's `GENERIC_STUDENT_CARD` classification;
+- Google's broadly supported `GENERIC_OTHER` classification;
 - the ASWJ College logo and deep-teal brand colour;
 - the student's name as the main header;
 - `Student pass · Dev` on dev;
@@ -134,6 +134,11 @@ The Google pass presentation includes:
 - QR alternate text that says `Class check-in`, never the raw QR
   token; and
 - a **Student Portal** link to the configured `WALLET_APP_BASE_URL`.
+
+Dev Google objects use the versioned suffix `aswj_student_dev_v2_...`. This
+one-time dev-only version isolates the redesigned pass from objects that were
+previously saved while the class still allowed multiple holders. Production
+object IDs are unchanged.
 
 Reopening the add-to-wallet flow updates the same stable GenericObject rather
 than creating a new pass. This is an on-demand REST refresh, not automated push
