@@ -87,7 +87,7 @@ test('Google Wallet object is branded, upserted and issued by a short reference-
       if (walletRequest.method === 'GET') {
         return {
           status: 200,
-          data: { multipleDevicesAndHoldersAllowedStatus: 'ONE_USER_ALL_DEVICES' },
+          data: { multipleDevicesAndHoldersAllowedStatus: 'oneUserAllDevices' },
         };
       }
       return { status: walletRequest.method === 'PATCH' ? 404 : 200 };
@@ -222,7 +222,7 @@ test('Google Wallet updates an existing object without trying to create a duplic
       if (walletRequest.method === 'GET') {
         return {
           status: 200,
-          data: { multipleDevicesAndHoldersAllowedStatus: 'ONE_USER_ALL_DEVICES' },
+          data: { multipleDevicesAndHoldersAllowedStatus: 'oneUserAllDevices' },
         };
       }
       return { status: 200 };

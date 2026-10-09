@@ -198,6 +198,10 @@ function successful(status: number) {
   return status >= 200 && status < 300;
 }
 
+function permitsOneUserAcrossDevices(value: unknown) {
+  return value === 'ONE_USER_ALL_DEVICES' || value === 'oneUserAllDevices';
+}
+
 async function requireSingleHolderClass(
   config: GoogleWalletConfiguration,
   request: GoogleWalletRequester
@@ -215,7 +219,9 @@ async function requireSingleHolderClass(
   const classData = response.data && typeof response.data === 'object'
     ? response.data as Record<string, unknown>
     : null;
-  if (classData?.multipleDevicesAndHoldersAllowedStatus !== 'ONE_USER_ALL_DEVICES') {
+  if (!permitsOneUserAcrossDevices(
+    classData?.multipleDevicesAndHoldersAllowedStatus
+  )) {
     throw new Error('Google Wallet class must use ONE_USER_ALL_DEVICES.');
   }
 }
