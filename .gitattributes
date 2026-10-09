@@ -1,0 +1,2 @@
+# Preserve Apple-provided badge artwork byte-for-byte, including its formatting.
+public/wallet/add-to-apple-wallet.svg -whitespace

@@ -5,3 +5,12 @@ node_modules/
 .DS_Store
 npm-debug.log*
 supabase/.temp/
+
+# Private signing material must never be committed.
+*.p12
+*.pfx
+*.pem
+*.key
+*.cer
+*.certSigningRequest
+.vercel
