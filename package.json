@@ -11,6 +11,7 @@
   "dependencies": {
     "@supabase/ssr": "0.12.4",
     "@supabase/supabase-js": "2.111.0",
+    "google-auth-library": "10.9.1",
     "next": "16.4.0",
     "passmint": "0.6.0",
     "qrcode": "1.5.4",

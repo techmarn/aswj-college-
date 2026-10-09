@@ -88,7 +88,12 @@ Official references:
    Google Wallet issuer account. Download one JSON key and store it securely.
 4. Create a Generic Class with an ID such as
    `<issuer-id>.aswj_student_dev`. The app references this existing class; it
-   does not create or change classes during a student request.
+   does not create or change classes during a student request. Set the class's
+   **Multiple devices and holders allowed status** to `ONE_USER_ALL_DEVICES` so
+   one student can use their own pass across their devices without allowing
+   the pass to be shared with another Google account. The app checks this
+   provider setting before it creates or updates any student pass and refuses
+   issuance if the class is still set to `MULTIPLE_HOLDERS`.
 5. Add the Android test account to the issuer's test users while the issuer is
    in demo mode.
 6. In Vercel, add these **Preview only** Sensitive variables:
@@ -106,7 +111,33 @@ Official references:
 7. After the shared variables are set, redeploy dev. Sign in as an accepted
    student on Android, tap the official **Add to Google Wallet** button,
    confirm the pass shows `[TEST ONLY]`, and scan it through the teacher
-   attendance screen.
+   attendance screen. `[TEST ONLY]` is added by Google while the issuer is in
+   Demo Mode; it is not part of the ASWJ pass artwork or application copy.
+
+### Google object and design flow
+
+The server authenticates the student, then creates or updates that student's
+Google Wallet GenericObject through the Google Wallet REST API. The object
+references the pre-created dev Generic Class above. Only after that succeeds
+does the app sign a short save JWT containing the existing object ID and class
+ID. The save JWT does not repeat the full student object or expose provider
+credentials to the browser.
+
+The Google pass presentation includes:
+
+- Google's `GENERIC_STUDENT_CARD` classification;
+- the ASWJ College logo and deep-teal brand colour;
+- the student's name as the main header;
+- `Student pass · Dev` on dev;
+- the ASWJ hero artwork at `public/wallet/google-hero.png`;
+- concise `PASS TYPE — STUDENT` and `CHECK-IN — SHOW QR` fields;
+- QR alternate text that says `Class check-in`, never the raw QR
+  token; and
+- a **Student Portal** link to the configured `WALLET_APP_BASE_URL`.
+
+Reopening the add-to-wallet flow updates the same stable GenericObject rather
+than creating a new pass. This is an on-demand REST refresh, not automated push
+delivery: current classes and schedules remain in the Student Portal.
 
 Official references:
 
@@ -147,13 +178,27 @@ active QR token.
    explains check-in and lost-pass security.
 4. Google save link opens only while signed in and installs for an approved
    Google test account.
-5. Neither pass contains email, phone, date of birth, guardian or wellbeing
+5. On an Android phone, the Google pass shows the ASWJ logo and hero artwork,
+   the student's name, `Student pass · Dev`, `PASS TYPE — STUDENT`,
+   `CHECK-IN — SHOW QR`, the Student Portal link and `Class check-in` below the
+   QR. The raw QR token is never printed as visible text.
+6. Repeat the Google visual check in landscape and on an Android tablet. The
+   hero remains intentional and balanced, the logo is not clipped, the name
+   remains prominent, and the QR and both compact fields remain readable.
+7. With the Google pass already installed, reopen the Student Portal and tap
+   **Add to Google Wallet** again. Confirm the existing pass refreshes to the
+   latest design and content without producing a second pass or requiring the
+   original to be removed.
+8. Attempt to save or share the Google pass to a different Google account.
+   Confirm Google rejects the second-account holder while the original user can
+   still use the pass on their own devices.
+9. Neither pass contains email, phone, date of birth, guardian or wellbeing
    data.
-6. QR scan records the correct student in the correct active class.
-7. Repeating the scan does not create a duplicate attendance record.
-8. A student cannot generate another student's pass by changing a URL.
-9. Signing out makes both wallet routes return to login.
-10. Suspending or withdrawing the only enrolment makes the pass unavailable in
+10. QR scan records the correct student in the correct active class.
+11. Repeating the scan does not create a duplicate attendance record.
+12. A student cannot generate another student's pass by changing a URL.
+13. Signing out makes both wallet routes return to login.
+14. Suspending or withdrawing the only enrolment makes the pass unavailable in
    the portal and makes its existing QR fail class eligibility at the scanner.
 
 Do not enable Production until both device paths and the rejection cases pass
