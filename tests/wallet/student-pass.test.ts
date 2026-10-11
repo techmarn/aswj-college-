@@ -83,7 +83,8 @@ test('Google Wallet link is signed, safely sized and excludes private registrati
 
     const payload = decodeJwtPayload(jwt);
     assert.equal(payload.iss, config.clientEmail);
-    assert.deepEqual(payload.origins, [config.appHostname]);
+    assert.deepEqual(payload.origins, [config.appBaseUrl]);
+    assert.equal(new URL(payload.origins[0]).origin, config.appBaseUrl);
     assert.equal(payload.payload.genericObjects.length, 1);
     const object = payload.payload.genericObjects[0];
     assert.equal(object.classId, config.classId);

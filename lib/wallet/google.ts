@@ -105,7 +105,7 @@ async function signedJwt(
     typ: 'savetowallet',
     iat: issuedAt,
     exp: issuedAt + 10 * 60,
-    origins: [config.appHostname],
+    origins: [config.appBaseUrl],
     payload: {
       genericObjects: [googleObject(data, config, compact)],
     },
