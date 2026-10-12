@@ -108,6 +108,27 @@ Official references:
    confirm the pass shows `[TEST ONLY]`, and scan it through the teacher
    attendance screen.
 
+The server signs a complete GenericObject and submits that signed JWT directly
+to Google's Wallet API. Google creates the pass and returns the Save-to-Wallet
+URI used for the redirect; the app does not construct that provider link in the
+browser.
+
+The Google pass presentation includes:
+
+- Google's supported `GENERIC_OTHER` classification;
+- the centred ASWJ College logo, geometric hero artwork and deep-teal colour;
+- the student's name as the main header;
+- `Student pass · Dev` on dev;
+- **PASS TYPE — STUDENT** and **CHECK-IN — SHOW QR** fields;
+- a QR labelled **Class check-in**, without displaying the raw QR token; and
+- a **Student Portal** link to the configured `WALLET_APP_BASE_URL`.
+
+Dev Google objects use the versioned suffix `aswj_student_dev_v3_...`. This
+dev-only version ensures the redesigned pass is created as a fresh test object
+instead of reusing an older object cached by Google. Production object IDs are
+unchanged. The same student continues to receive the same stable v3 object on
+subsequent dev saves.
+
 Official references:
 
 - [Google Wallet issuer onboarding](https://developers.google.com/wallet/generic/getting-started/issuer-onboarding)

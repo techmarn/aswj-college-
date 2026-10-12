@@ -26,7 +26,9 @@ export function applePassSerialNumber(
 export function googleWalletObjectSuffix(
   studentId: string,
   environment: WalletEnvironment,
-  secret: string
+  secret: string,
+  version?: string
 ) {
-  return `aswj_student_${environment}_${digestIdentifier('google-object', studentId, environment, secret)}`;
+  const versionSegment = version ? `_${version}` : '';
+  return `aswj_student_${environment}${versionSegment}_${digestIdentifier('google-object', studentId, environment, secret)}`;
 }

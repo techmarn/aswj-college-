@@ -16,6 +16,7 @@ const GOOGLE_WALLET_JWT_INSERT_URL =
 const GOOGLE_WALLET_SCOPE =
   'https://www.googleapis.com/auth/wallet_object.issuer';
 const GOOGLE_SAVE_URI_MAX_LENGTH = 4096;
+const GOOGLE_DEV_OBJECT_VERSION = 'v3';
 
 type GoogleWalletJwtInsertResult = {
   status: number;
@@ -114,37 +115,65 @@ function googleObject(
   data: StudentWalletPassData,
   config: GoogleWalletConfiguration
 ) {
+  const portalUrl = new URL('/student', config.appBaseUrl).toString();
   const object: Record<string, unknown> = {
     id: `${config.issuerId}.${googleWalletObjectSuffix(
       data.studentId,
       config.environment,
-      config.idSecret
+      config.idSecret,
+      config.environment === 'dev' ? GOOGLE_DEV_OBJECT_VERSION : undefined
     )}`,
     classId: config.classId,
     state: 'ACTIVE',
+    genericType: 'GENERIC_OTHER',
     cardTitle: localized('ASWJ College'),
-    header: localized(data.studentName.slice(0, 60)),
+    subheader: localized(
+      config.environment === 'dev' ? 'Student pass · Dev' : 'Student pass'
+    ),
+    header: localized(data.studentName.slice(0, 46)),
+    logo: {
+      sourceUri: {
+        uri: new URL('/wallet/google-logo-v2.png', config.appBaseUrl).toString(),
+      },
+      contentDescription: localized('ASWJ College mark'),
+    },
+    heroImage: {
+      sourceUri: {
+        uri: new URL('/wallet/google-hero.png', config.appBaseUrl).toString(),
+      },
+      contentDescription: localized('ASWJ College geometric artwork'),
+    },
     barcode: {
       type: 'QR_CODE',
       value: data.qrValue,
+      alternateText: 'Class check-in',
       renderEncoding: 'UTF_8',
     },
     hexBackgroundColor: '#063c38',
-  };
-
-  object.subheader = localized(
-    config.environment === 'dev' ? 'Student pass · DEV TEST' : 'Student pass'
-  );
-  object.logo = {
-    sourceUri: {
-      uri: new URL('/wallet/google-logo.png', config.appBaseUrl).toString(),
+    textModulesData: [
+      {
+        id: 'row2left',
+        header: 'Pass type',
+        body: 'Student',
+      },
+      {
+        id: 'row2right',
+        header: 'Check-in',
+        body: 'Show QR',
+      },
+    ],
+    appLinkData: {
+      webAppLinkInfo: {
+        appTarget: {
+          targetUri: {
+            uri: portalUrl,
+            description: 'Open the ASWJ College Student Portal',
+          },
+        },
+      },
+      displayText: localized('Student Portal'),
     },
   };
-  object.textModulesData = [{
-    id: 'check-in-status',
-    header: 'Class Check-in',
-    body: 'Current class, schedule and enrolment status are verified securely at check-in.',
-  }];
 
   return object;
 }

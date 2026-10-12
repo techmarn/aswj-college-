@@ -60,6 +60,10 @@ test('wallet object identifiers are stable, provider-specific and opaque', () =>
   assert.equal(google.includes(STUDENT_ID), false);
   assert.match(apple, /^aswj-dev-[a-f0-9]{32}$/);
   assert.match(google, /^aswj_student_dev_[a-f0-9]{32}$/);
+  assert.match(
+    googleWalletObjectSuffix(STUDENT_ID, 'dev', ID_SECRET, 'v3'),
+    /^aswj_student_dev_v3_[a-f0-9]{32}$/
+  );
 });
 
 test('Google Wallet JWT is provider-accepted, complete and excludes private registration data', async () => {
@@ -97,19 +101,57 @@ test('Google Wallet JWT is provider-accepted, complete and excludes private regi
     assert.equal(payload.payload.genericObjects.length, 1);
     const object = payload.payload.genericObjects[0];
     assert.equal(object.classId, config.classId);
-    assert.equal(object.barcode.value, QR_VALUE);
+    assert.equal(object.genericType, 'GENERIC_OTHER');
+    assert.match(object.id, /^123456789012\.aswj_student_dev_v3_[a-f0-9]{32}$/);
     assert.equal(object.id.includes(STUDENT_ID), false);
+    assert.equal(object.hexBackgroundColor, '#063c38');
+    assert.deepEqual(object.cardTitle, {
+      defaultValue: { language: 'en-AU', value: 'ASWJ College' },
+    });
     assert.deepEqual(object.subheader, {
-      defaultValue: { language: 'en-AU', value: 'Student pass · DEV TEST' },
+      defaultValue: { language: 'en-AU', value: 'Student pass · Dev' },
+    });
+    assert.deepEqual(object.header, {
+      defaultValue: { language: 'en-AU', value: passData.studentName },
     });
     assert.deepEqual(object.logo, {
-      sourceUri: { uri: `${config.appBaseUrl}/wallet/google-logo.png` },
+      sourceUri: { uri: `${config.appBaseUrl}/wallet/google-logo-v2.png` },
+      contentDescription: {
+        defaultValue: { language: 'en-AU', value: 'ASWJ College mark' },
+      },
     });
-    assert.deepEqual(object.textModulesData, [{
-      id: 'check-in-status',
-      header: 'Class Check-in',
-      body: 'Current class, schedule and enrolment status are verified securely at check-in.',
-    }]);
+    assert.deepEqual(object.heroImage, {
+      sourceUri: { uri: `${config.appBaseUrl}/wallet/google-hero.png` },
+      contentDescription: {
+        defaultValue: {
+          language: 'en-AU',
+          value: 'ASWJ College geometric artwork',
+        },
+      },
+    });
+    assert.deepEqual(object.barcode, {
+      type: 'QR_CODE',
+      value: QR_VALUE,
+      alternateText: 'Class check-in',
+      renderEncoding: 'UTF_8',
+    });
+    assert.deepEqual(object.textModulesData, [
+      { id: 'row2left', header: 'Pass type', body: 'Student' },
+      { id: 'row2right', header: 'Check-in', body: 'Show QR' },
+    ]);
+    assert.deepEqual(object.appLinkData, {
+      webAppLinkInfo: {
+        appTarget: {
+          targetUri: {
+            uri: `${config.appBaseUrl}/student`,
+            description: 'Open the ASWJ College Student Portal',
+          },
+        },
+      },
+      displayText: {
+        defaultValue: { language: 'en-AU', value: 'Student Portal' },
+      },
+    });
 
     const serialized = JSON.stringify(payload).toLowerCase();
     assert.equal(serialized.includes('brothers shariah level 1'), false);
@@ -181,6 +223,22 @@ test('Google Wallet JWT is provider-accepted, complete and excludes private regi
     );
   } finally {
     await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('Google Wallet artwork has the required provider dimensions', async () => {
+  const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const expectedAssets = [
+    { filename: 'google-hero.png', width: 1032, height: 812 },
+    { filename: 'google-logo-v2.png', width: 660, height: 660 },
+  ];
+
+  for (const asset of expectedAssets) {
+    const bytes = await readFile(join(process.cwd(), 'public', 'wallet', asset.filename));
+    assert.deepEqual(bytes.subarray(0, 8), pngSignature);
+    assert.equal(bytes.toString('ascii', 12, 16), 'IHDR');
+    assert.equal(bytes.readUInt32BE(16), asset.width);
+    assert.equal(bytes.readUInt32BE(20), asset.height);
   }
 });
 
