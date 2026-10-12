@@ -16,7 +16,7 @@ const GOOGLE_WALLET_JWT_INSERT_URL =
 const GOOGLE_WALLET_SCOPE =
   'https://www.googleapis.com/auth/wallet_object.issuer';
 const GOOGLE_SAVE_URI_MAX_LENGTH = 4096;
-const GOOGLE_DEV_OBJECT_VERSION = 'v3';
+const GOOGLE_DEV_OBJECT_VERSION = 'v4';
 
 type GoogleWalletJwtInsertResult = {
   status: number;
@@ -116,6 +116,15 @@ function googleObject(
   config: GoogleWalletConfiguration
 ) {
   const portalUrl = new URL('/student', config.appBaseUrl).toString();
+  const logo = config.environment === 'dev'
+    ? {
+        asset: '/wallet/google-logo-v3.png',
+        description: 'ASWJ Islamic College logo',
+      }
+    : {
+        asset: '/wallet/google-logo-v2.png',
+        description: 'ASWJ College mark',
+      };
   const object: Record<string, unknown> = {
     id: `${config.issuerId}.${googleWalletObjectSuffix(
       data.studentId,
@@ -133,9 +142,9 @@ function googleObject(
     header: localized(data.studentName.slice(0, 46)),
     logo: {
       sourceUri: {
-        uri: new URL('/wallet/google-logo-v2.png', config.appBaseUrl).toString(),
+        uri: new URL(logo.asset, config.appBaseUrl).toString(),
       },
-      contentDescription: localized('ASWJ College mark'),
+      contentDescription: localized(logo.description),
     },
     heroImage: {
       sourceUri: {

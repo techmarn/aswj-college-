@@ -116,18 +116,20 @@ browser.
 The Google pass presentation includes:
 
 - Google's supported `GENERIC_OTHER` classification;
-- the centred ASWJ College logo, geometric hero artwork and deep-teal colour;
+- the full bilingual ASWJ Islamic College logo on dev, geometric hero artwork
+  and deep-teal colour;
 - the student's name as the main header;
 - `Student pass · Dev` on dev;
 - **PASS TYPE — STUDENT** and **CHECK-IN — SHOW QR** fields;
 - a QR labelled **Class check-in**, without displaying the raw QR token; and
 - a **Student Portal** link to the configured `WALLET_APP_BASE_URL`.
 
-Dev Google objects use the versioned suffix `aswj_student_dev_v3_...`. This
-dev-only version ensures the redesigned pass is created as a fresh test object
-instead of reusing an older object cached by Google. Production object IDs are
-unchanged. The same student continues to receive the same stable v3 object on
-subsequent dev saves.
+Dev Google objects use the versioned suffix `aswj_student_dev_v4_...`. The new
+immutable logo URL and dev-only object version prevent Google from reusing the
+older symbol-only artwork. Production artwork and object IDs remain unchanged
+pending separate production approval. The same student continues to receive
+the same stable v4 object on subsequent dev saves. An older v3 test pass may
+remain in Google Wallet and can be removed after the v4 pass is confirmed.
 
 Official references:
 

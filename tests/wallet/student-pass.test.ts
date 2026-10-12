@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -61,8 +62,8 @@ test('wallet object identifiers are stable, provider-specific and opaque', () =>
   assert.match(apple, /^aswj-dev-[a-f0-9]{32}$/);
   assert.match(google, /^aswj_student_dev_[a-f0-9]{32}$/);
   assert.match(
-    googleWalletObjectSuffix(STUDENT_ID, 'dev', ID_SECRET, 'v3'),
-    /^aswj_student_dev_v3_[a-f0-9]{32}$/
+    googleWalletObjectSuffix(STUDENT_ID, 'dev', ID_SECRET, 'v4'),
+    /^aswj_student_dev_v4_[a-f0-9]{32}$/
   );
 });
 
@@ -102,7 +103,7 @@ test('Google Wallet JWT is provider-accepted, complete and excludes private regi
     const object = payload.payload.genericObjects[0];
     assert.equal(object.classId, config.classId);
     assert.equal(object.genericType, 'GENERIC_OTHER');
-    assert.match(object.id, /^123456789012\.aswj_student_dev_v3_[a-f0-9]{32}$/);
+    assert.match(object.id, /^123456789012\.aswj_student_dev_v4_[a-f0-9]{32}$/);
     assert.equal(object.id.includes(STUDENT_ID), false);
     assert.equal(object.hexBackgroundColor, '#063c38');
     assert.deepEqual(object.cardTitle, {
@@ -115,9 +116,12 @@ test('Google Wallet JWT is provider-accepted, complete and excludes private regi
       defaultValue: { language: 'en-AU', value: passData.studentName },
     });
     assert.deepEqual(object.logo, {
-      sourceUri: { uri: `${config.appBaseUrl}/wallet/google-logo-v2.png` },
+      sourceUri: { uri: `${config.appBaseUrl}/wallet/google-logo-v3.png` },
       contentDescription: {
-        defaultValue: { language: 'en-AU', value: 'ASWJ College mark' },
+        defaultValue: {
+          language: 'en-AU',
+          value: 'ASWJ Islamic College logo',
+        },
       },
     });
     assert.deepEqual(object.heroImage, {
@@ -221,6 +225,43 @@ test('Google Wallet JWT is provider-accepted, complete and excludes private regi
         return true;
       }
     );
+
+    const productionConfig: GoogleWalletConfiguration = {
+      ...config,
+      environment: 'production',
+      appBaseUrl: 'https://aswjcollege.example',
+      appHostname: 'aswjcollege.example',
+      classId: '123456789012.aswj_student',
+    };
+    const productionSaveUri =
+      'https://pay.google.com/gp/v/save/provider-issued-production-test-token';
+    let productionJwt = '';
+    const productionUrl = await buildGoogleStudentPassSaveUrl(
+      passData,
+      productionConfig,
+      async (requestConfig, signedJwt) => {
+        assert.equal(requestConfig, productionConfig);
+        productionJwt = signedJwt;
+        return { status: 200, data: { saveUri: productionSaveUri } };
+      }
+    );
+    assert.equal(productionUrl, productionSaveUri);
+
+    const productionObject = decodeJwtPayload(productionJwt)
+      .payload.genericObjects[0];
+    assert.match(
+      productionObject.id,
+      /^123456789012\.aswj_student_production_[a-f0-9]{32}$/
+    );
+    assert.equal(productionObject.id.includes('_v4_'), false);
+    assert.deepEqual(productionObject.logo, {
+      sourceUri: {
+        uri: `${productionConfig.appBaseUrl}/wallet/google-logo-v2.png`,
+      },
+      contentDescription: {
+        defaultValue: { language: 'en-AU', value: 'ASWJ College mark' },
+      },
+    });
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
@@ -231,6 +272,12 @@ test('Google Wallet artwork has the required provider dimensions', async () => {
   const expectedAssets = [
     { filename: 'google-hero.png', width: 1032, height: 812 },
     { filename: 'google-logo-v2.png', width: 660, height: 660 },
+    {
+      filename: 'google-logo-v3.png',
+      width: 660,
+      height: 660,
+      sha256: '6d9c0789cf482d39bf6ba7e5971cdb060464ece6a8d2951ea3425e9dc57e041a',
+    },
   ];
 
   for (const asset of expectedAssets) {
@@ -239,6 +286,12 @@ test('Google Wallet artwork has the required provider dimensions', async () => {
     assert.equal(bytes.toString('ascii', 12, 16), 'IHDR');
     assert.equal(bytes.readUInt32BE(16), asset.width);
     assert.equal(bytes.readUInt32BE(20), asset.height);
+    if ('sha256' in asset) {
+      assert.equal(
+        createHash('sha256').update(bytes).digest('hex'),
+        asset.sha256
+      );
+    }
   }
 });
 
