@@ -425,7 +425,7 @@ export default function EmailTemplatesClient({ rows }: { rows: EmailTemplateRow[
                   </div>
 
                   <div className="field">
-                    <label htmlFor="email-template-button">Portal button label</label>
+                    <label htmlFor="email-template-button">Button label</label>
                     <input
                       ref={(element) => { fieldRefs.current.buttonLabel = element; }}
                       id="email-template-button"

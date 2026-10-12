@@ -173,3 +173,7 @@ export function getEmailWebhookConfigurationStatus(): EmailWebhookConfigurationS
 export function studentPortalUrl(appBaseUrl: string) {
   return new URL('/student', appBaseUrl).toString();
 }
+
+export function studentPassUrl(appBaseUrl: string) {
+  return new URL('/student/pass', appBaseUrl).toString();
+}

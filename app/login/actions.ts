@@ -3,15 +3,10 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 import { applicationUrl } from '../../lib/auth/application-origin';
-
-const APPLY_PATH = '/student/apply';
+import { safeLoginNext } from '../../lib/auth/login-next';
 
 function confirmationRedirect() {
   return applicationUrl('/auth/callback');
-}
-
-function safeNext(value: FormDataEntryValue | null) {
-  return typeof value === 'string' && value === APPLY_PATH ? APPLY_PATH : null;
 }
 
 function loginRedirect(error: string, nextPath: string | null, signupMode = false): never {
@@ -29,7 +24,7 @@ function roleDestination(role: string, nextPath: string | null) {
 }
 
 export async function login(formData: FormData) {
-  const nextPath = safeNext(formData.get('next'));
+  const nextPath = safeLoginNext(formData.get('next'));
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
   const password = String(formData.get('password') ?? '');
   if (!email || email.length > 320 || !password || password.length > 256) {
@@ -48,7 +43,7 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
-  const nextPath = safeNext(formData.get('next'));
+  const nextPath = safeLoginNext(formData.get('next'));
   const firstName = String(formData.get('first_name') ?? '').trim();
   const lastName = String(formData.get('last_name') ?? '').trim();
   const email = String(formData.get('email') ?? '').trim().toLowerCase();

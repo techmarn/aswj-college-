@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test:email": "node --require ./tests/server-only-register.cjs --import tsx --test tests/email/*.test.ts",
     "test:wallet": "node --conditions=react-server --import tsx --test tests/wallet/*.test.ts"
   },
   "dependencies": {

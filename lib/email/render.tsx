@@ -4,7 +4,7 @@ import { Buffer } from 'node:buffer';
 import { createRequire } from 'node:module';
 import { createElement } from 'react';
 import TransactionalEmail from '../../emails/TransactionalEmail';
-import { studentPortalUrl } from './config';
+import { studentPassUrl, studentPortalUrl } from './config';
 import {
   DEFAULT_EMAIL_TEMPLATES,
   emailTemplateParagraphs,
@@ -132,6 +132,9 @@ export function renderTransactionalEmail(
   const definition = usableDefinition(templateKey, suppliedDefinition);
   const payload = normalizeEmailTemplatePayload(rawPayload);
   const portalUrl = studentPortalUrl(appBaseUrl);
+  const actionUrl = templateKey === 'application_accepted'
+    ? studentPassUrl(appBaseUrl)
+    : portalUrl;
   const values = templateValues(payload, portalUrl);
   const subject = interpolateEmailTemplate(definition.subjectTemplate, values);
   const preview = interpolateEmailTemplate(definition.previewTemplate, values);
@@ -148,7 +151,7 @@ export function renderTransactionalEmail(
     <TransactionalEmail
       preview={preview}
       heading={heading}
-      portalUrl={portalUrl}
+      actionUrl={actionUrl}
       buttonLabel={buttonLabel}
     >
       {paragraphs.map((paragraph, index) => createElement(
@@ -158,7 +161,7 @@ export function renderTransactionalEmail(
       ))}
     </TransactionalEmail>
   );
-  const text = `${body}\n\n${buttonLabel}: ${portalUrl}\n\nThis is an operational message about your ASWJ College record.`;
+  const text = `${body}\n\n${buttonLabel}: ${actionUrl}\n\nThis is an operational message about your ASWJ College record.`;
   if (Buffer.byteLength(html, 'utf8') > 200_000 || Buffer.byteLength(text, 'utf8') > 50_000) {
     throw new Error('The rendered email exceeded the delivery size limit.');
   }

@@ -4,7 +4,7 @@ export type TransactionalEmailProps = {
   preview: string;
   heading: string;
   children: ReactNode;
-  portalUrl: string;
+  actionUrl: string;
   buttonLabel: string;
 };
 
@@ -30,7 +30,7 @@ export default function TransactionalEmail({
   preview,
   heading,
   children,
-  portalUrl,
+  actionUrl,
   buttonLabel,
 }: TransactionalEmailProps) {
   return (
@@ -75,7 +75,7 @@ export default function TransactionalEmail({
                 {children}
                 <p style={{ margin: '26px 0 8px' }}>
                   <a
-                    href={portalUrl}
+                    href={actionUrl}
                     style={{
                       display: 'inline-block',
                       padding: '12px 18px',

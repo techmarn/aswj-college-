@@ -179,6 +179,15 @@ active QR token.
 10. Suspending or withdrawing the only enrolment makes the pass unavailable in
    the portal and makes its existing QR fail class eligibility at the scanner.
 
+## Acceptance email
+
+New acceptance emails include an **Open Student Pass** button. It links to the
+authenticated `/student/pass` landing page rather than directly to either
+wallet provider. Signed-out students return to that page after login, then the
+portal shows both Apple Wallet and Google Wallet options at **Your student
+pass**. The email never contains a wallet token, student QR value or provider
+credential.
+
 Do not enable Production until both device paths and the rejection cases pass
 in dev. Production requires separate provider identifiers/credentials and a
 separate approval.

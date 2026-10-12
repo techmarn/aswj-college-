@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { login, signup } from './actions';
 import { PendingSubmitButton } from '../auth/PendingSubmitButton';
+import { safeLoginNext } from '../../lib/auth/login-next';
 
 type SearchValue = string | string[] | undefined;
 
@@ -24,7 +25,7 @@ export default async function LoginPage({
   const signupMode = firstValue(params.mode) === 'signup';
   const created = firstValue(params.created) === '1';
   const passwordReset = firstValue(params.password_reset) === '1';
-  const nextPath = firstValue(params.next) === '/student/apply' ? '/student/apply' : null;
+  const nextPath = safeLoginNext(firstValue(params.next));
 
   const signInParams = new URLSearchParams();
   const signUpParams = new URLSearchParams({ mode: 'signup' });
