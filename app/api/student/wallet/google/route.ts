@@ -1,5 +1,8 @@
 import { getGoogleWalletConfigurationStatus } from '../../../../../lib/wallet/config';
-import { buildGoogleStudentPassSaveUrl } from '../../../../../lib/wallet/google';
+import {
+  buildGoogleStudentPassSaveUrl,
+  googleWalletFailureDiagnostic,
+} from '../../../../../lib/wallet/google';
 import { loadAuthenticatedStudentPass } from '../../../../../lib/wallet/request';
 
 export const runtime = 'nodejs';
@@ -45,6 +48,10 @@ export async function GET(request: Request) {
       student.pass,
       configuration.config
     );
+    console.info(JSON.stringify({
+      event: 'google_wallet_save_ready',
+      stage: 'provider_accepted',
+    }));
     return new Response(null, {
       status: 303,
       headers: {
@@ -52,7 +59,8 @@ export async function GET(request: Request) {
         'Location': saveUrl,
       },
     });
-  } catch {
+  } catch (error) {
+    console.error(JSON.stringify(googleWalletFailureDiagnostic(error)));
     return portalRedirect(request, 'google_failed');
   }
 }

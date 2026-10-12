@@ -5,7 +5,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { buildAppleStudentPass } from '../../lib/wallet/apple';
-import { buildGoogleStudentPassSaveUrl } from '../../lib/wallet/google';
+import {
+  buildGoogleStudentPassSaveUrl,
+  googleWalletFailureDiagnostic,
+  type GoogleWalletJwtRequester,
+} from '../../lib/wallet/google';
 import {
   applePassSerialNumber,
   googleWalletObjectSuffix,
@@ -58,7 +62,7 @@ test('wallet object identifiers are stable, provider-specific and opaque', () =>
   assert.match(google, /^aswj_student_dev_[a-f0-9]{32}$/);
 });
 
-test('Google Wallet link is signed, safely sized and excludes private registration data', async () => {
+test('Google Wallet JWT is provider-accepted, complete and excludes private registration data', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'aswj-google-wallet-test-'));
 
   try {
@@ -76,10 +80,15 @@ test('Google Wallet link is signed, safely sized and excludes private registrati
       privateKeyPkcs8Pem,
     };
 
-    const url = await buildGoogleStudentPassSaveUrl(passData, config);
-    assert.match(url, /^https:\/\/pay\.google\.com\/gp\/v\/save\//);
-    const jwt = url.slice(url.lastIndexOf('/') + 1);
-    assert.ok(jwt.length <= 1800, `JWT length was ${jwt.length}`);
+    const providerSaveUri = 'https://pay.google.com/gp/v/save/provider-issued-test-token';
+    let jwt = '';
+    const request: GoogleWalletJwtRequester = async (requestConfig, signedJwt) => {
+      assert.equal(requestConfig, config);
+      jwt = signedJwt;
+      return { status: 200, data: { saveUri: providerSaveUri } };
+    };
+    const url = await buildGoogleStudentPassSaveUrl(passData, config, request);
+    assert.equal(url, providerSaveUri);
 
     const payload = decodeJwtPayload(jwt);
     assert.equal(payload.iss, config.clientEmail);
@@ -90,6 +99,17 @@ test('Google Wallet link is signed, safely sized and excludes private registrati
     assert.equal(object.classId, config.classId);
     assert.equal(object.barcode.value, QR_VALUE);
     assert.equal(object.id.includes(STUDENT_ID), false);
+    assert.deepEqual(object.subheader, {
+      defaultValue: { language: 'en-AU', value: 'Student pass · DEV TEST' },
+    });
+    assert.deepEqual(object.logo, {
+      sourceUri: { uri: `${config.appBaseUrl}/wallet/google-logo.png` },
+    });
+    assert.deepEqual(object.textModulesData, [{
+      id: 'check-in-status',
+      header: 'Class Check-in',
+      body: 'Current class, schedule and enrolment status are verified securely at check-in.',
+    }]);
 
     const serialized = JSON.stringify(payload).toLowerCase();
     assert.equal(serialized.includes('brothers shariah level 1'), false);
@@ -104,6 +124,61 @@ test('Google Wallet link is signed, safely sized and excludes private registrati
     ]) {
       assert.equal(serialized.includes(forbidden), false, `unexpected private field: ${forbidden}`);
     }
+
+    await assert.rejects(
+      buildGoogleStudentPassSaveUrl(passData, config, async () => ({
+        status: 400,
+        data: {
+          error: {
+            status: 'INVALID_ARGUMENT',
+            message: `Sensitive provider response ${jwt}`,
+            errors: [{ reason: 'invalidJwt' }],
+          },
+        },
+      })),
+      (error) => {
+        const diagnostic = googleWalletFailureDiagnostic(error);
+        assert.deepEqual(diagnostic, {
+          event: 'google_wallet_save_failed',
+          stage: 'provider_rejected',
+          status: 400,
+          providerStatus: 'INVALID_ARGUMENT',
+          providerReason: 'invalidJwt',
+        });
+        assert.equal(JSON.stringify(diagnostic).includes(jwt), false);
+        return true;
+      }
+    );
+
+    await assert.rejects(
+      buildGoogleStudentPassSaveUrl(passData, config, async () => ({
+        status: 200,
+        data: { saveUri: 'https://example.com/not-google-wallet' },
+      })),
+      (error) => {
+        assert.deepEqual(googleWalletFailureDiagnostic(error), {
+          event: 'google_wallet_save_failed',
+          stage: 'provider_response',
+          status: 200,
+        });
+        return true;
+      }
+    );
+
+    await assert.rejects(
+      buildGoogleStudentPassSaveUrl(passData, config, async () => {
+        throw new Error(`Sensitive network failure ${jwt}`);
+      }),
+      (error) => {
+        const diagnostic = googleWalletFailureDiagnostic(error);
+        assert.deepEqual(diagnostic, {
+          event: 'google_wallet_save_failed',
+          stage: 'provider_request',
+        });
+        assert.equal(JSON.stringify(diagnostic).includes(jwt), false);
+        return true;
+      }
+    );
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
