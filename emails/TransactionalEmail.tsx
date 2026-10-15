@@ -1,11 +1,17 @@
 import type { CSSProperties, ReactNode } from 'react';
 
+export type EmailAction = {
+  label: string;
+  url: string;
+};
+
 export type TransactionalEmailProps = {
   preview: string;
   heading: string;
   children: ReactNode;
   actionUrl: string;
   buttonLabel: string;
+  secondaryActions?: readonly EmailAction[];
 };
 
 const bodyStyle: CSSProperties = {
@@ -32,6 +38,7 @@ export default function TransactionalEmail({
   children,
   actionUrl,
   buttonLabel,
+  secondaryActions = [],
 }: TransactionalEmailProps) {
   return (
     <html lang="en">
@@ -89,6 +96,25 @@ export default function TransactionalEmail({
                     {buttonLabel}
                   </a>
                 </p>
+                {secondaryActions.map((action) => (
+                  <p key={action.url} style={{ margin: '10px 0 8px' }}>
+                    <a
+                      href={action.url}
+                      style={{
+                        display: 'inline-block',
+                        padding: '11px 17px',
+                        border: '1px solid #087f70',
+                        borderRadius: '8px',
+                        backgroundColor: '#ffffff',
+                        color: '#087f70',
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {action.label}
+                    </a>
+                  </p>
+                ))}
                 <p style={{ margin: '24px 0 0', color: '#5f716b', fontSize: '13px' }}>
                   This is an operational message about your ASWJ College record. If you
                   need help, reply to this email to contact administration.

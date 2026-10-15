@@ -177,3 +177,7 @@ export function studentPortalUrl(appBaseUrl: string) {
 export function studentPassUrl(appBaseUrl: string) {
   return new URL('/student/pass', appBaseUrl).toString();
 }
+
+export function studentClassCalendarUrl(appBaseUrl: string, classId: string) {
+  return new URL(`/student/calendar/${classId}`, appBaseUrl).toString();
+}

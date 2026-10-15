@@ -158,7 +158,9 @@ Supabase references:
   recipient addresses, message bodies, provider payloads, secrets, medical
   notes, learning notes, allergy notes, or decision reasons.
 - Templates include only the student's first name, class label, optional term,
-  optional waiting-list position, and a link to the Student Portal.
+  optional waiting-list position and, for active-enrolment messages, the queued
+  class day/time. Wallet and calendar actions use authenticated same-origin
+  landing pages; provider URLs, QR values and credentials are never emailed.
 
 ## Editing messages in the app
 
@@ -172,6 +174,13 @@ Every save creates a new numbered revision. Existing queued messages retain the
 revision selected when they were queued, and messages already prepared for
 Resend retain their frozen subject, HTML and text. **Restore default** also
 creates a new revision so the history is not destroyed.
+
+Application-accepted and enrolment-reinstated messages show the class schedule
+captured when the event is queued. Their **Add class to calendar** action opens
+an authenticated, class-specific page. The downloadable weekly calendar event
+is generated from the current active enrolment and class schedule, so the class
+identifier in the URL is never treated as authorization. Students should still
+check the Student Portal for later timetable changes or cancellations.
 
 The account welcome message is queued once, after `email_confirmed_at` becomes
 available. Supabase Auth still owns the preceding confirmation-link email. To

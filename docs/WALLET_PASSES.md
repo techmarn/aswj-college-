@@ -179,14 +179,20 @@ active QR token.
 10. Suspending or withdrawing the only enrolment makes the pass unavailable in
    the portal and makes its existing QR fail class eligibility at the scanner.
 
-## Acceptance email
+## Active-enrolment emails
 
-New acceptance emails include an **Open Student Pass** button. It links to the
-authenticated `/student/pass` landing page rather than directly to either
-wallet provider. Signed-out students return to that page after login, then the
-portal shows both Apple Wallet and Google Wallet options at **Your student
-pass**. The email never contains a wallet token, student QR value or provider
-credential.
+New application-accepted and enrolment-reinstated emails include an **Open
+Student Pass** button. It links to the authenticated `/student/pass` landing
+page rather than directly to either wallet provider. The email tells iPhone
+users to open that page, sign in and select **Add to Apple Wallet**. Signed-out
+students return to the pass page after login, where the portal shows both Apple
+Wallet and Google Wallet options at **Your student pass**.
+
+These messages also show the queued class day/time and link to an authenticated
+class-specific calendar page. The calendar endpoint rechecks the signed-in
+student's active enrolment before producing the weekly `.ics` file. The email
+never contains a wallet token, student QR value, provider credential or direct
+wallet-provider URL.
 
 Do not enable Production until both device paths and the rejection cases pass
 in dev. Production requires separate provider identifiers/credentials and a
