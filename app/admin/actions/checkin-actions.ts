@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireAttendanceStaff } from '../../../lib/supabase/server';
+import { normalizeBulkIds, toDatabaseAttendanceStatus } from '../../../lib/bulk-actions';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -66,11 +67,7 @@ export async function setManualAttendance(
 ) {
   if (!UUID_PATTERN.test(enrolmentId)) throw new Error('The selected enrolment is not valid.');
   const { supabase } = await requireClassAttendanceAccess(classId);
-  const databaseStatus = status === 'absent'
-    ? 'absent_unexcused'
-    : status === 'excused'
-      ? 'absent_excused'
-      : status;
+  const databaseStatus = toDatabaseAttendanceStatus(status);
 
   const { error } = await supabase.rpc('admin_set_manual_attendance', {
     p_enrolment_id: enrolmentId,
@@ -80,6 +77,25 @@ export async function setManualAttendance(
 
   if (error) throw new Error(error.message);
   refreshAttendanceViews();
+}
+
+export async function setBulkManualAttendance(
+  enrolmentIds: string[],
+  classId: string,
+  status: 'present' | 'late' | 'absent' | 'excused'
+) {
+  const ids = normalizeBulkIds(enrolmentIds, 'student', 'students');
+  const databaseStatus = toDatabaseAttendanceStatus(status);
+  const { supabase } = await requireClassAttendanceAccess(classId);
+  const { data, error } = await supabase.rpc('admin_set_manual_attendance_bulk', {
+    p_enrolment_ids: ids,
+    p_class_id: classId,
+    p_status: databaseStatus,
+  });
+
+  if (error) throw new Error(error.message);
+  refreshAttendanceViews();
+  return { processed: Number(data ?? ids.length) };
 }
 
 export async function closeTodayRoll(classId: string) {

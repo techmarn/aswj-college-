@@ -124,6 +124,18 @@ tbody tr:hover { background: #fbfcfb; }
 .btn-outline { border-color: var(--line-strong); background: #fff; color: var(--brand-deep); }
 .btn-outline:hover { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-deep); }
 .actions { display: flex; flex-wrap: wrap; gap: 9px; }
+.bulk-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); padding: 14px 16px; box-shadow: var(--shadow-sm); }
+.bulk-toolbar > div:first-child { display: grid; gap: 2px; }
+.bulk-toolbar > div:first-child > span { color: var(--muted); font-size: 13px; }
+.bulk-select-all { display: inline-flex; align-items: center; gap: 9px; width: fit-content; margin-bottom: 5px; color: var(--brand-deep); font-size: 13px; font-weight: 800; cursor: pointer; }
+.bulk-select-all:has(input:disabled) { cursor: not-allowed; opacity: .55; }
+.bulk-select-all input { width: 22px; height: 22px; margin: 0; accent-color: var(--brand); cursor: inherit; }
+.bulk-select-column { width: 62px; padding-right: 8px; padding-left: 8px; text-align: center; }
+.bulk-select-control { display: inline-grid; width: 44px; height: 44px; place-items: center; border-radius: 9px; cursor: pointer; }
+.bulk-select-control:hover { background: var(--brand-soft); }
+.bulk-select-control:has(input:disabled) { cursor: not-allowed; opacity: .55; }
+.bulk-select-control input { width: 22px; height: 22px; margin: 0; accent-color: var(--brand); cursor: inherit; }
+tbody tr.bulk-row-selected, tbody tr.bulk-row-selected:hover { background: var(--brand-soft); }
 .notice { margin-bottom: 18px; padding: 14px 16px; border: 1px solid #efc9cd; border-radius: 12px; background: var(--danger-bg); color: #76262d; font-size: 14px; line-height: 1.5; }
 .notice strong { display: block; margin-bottom: 3px; }
 .notice.success { border-color: #bddcc9; background: var(--success-bg); color: #155331; }
@@ -459,6 +471,9 @@ tbody tr:hover { background: #fbfcfb; }
   .checkin-roll td:not([data-label]) { display: block; }
   .checkin-row-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .checkin-row-actions .btn { width: 100%; min-height: 48px; }
+  .bulk-toolbar { align-items: stretch; flex-direction: column; }
+  .bulk-attendance-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .bulk-attendance-actions .btn { width: 100%; }
 }
 @media (max-width:520px) {
   .admin-sidebar { grid-template-columns: auto minmax(0,1fr); }

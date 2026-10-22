@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '../../../lib/supabase/server';
+import { normalizeBulkIds } from '../../../lib/bulk-actions';
 
 export type ApplicationDecision = 'accepted' | 'waitlisted' | 'declined';
 
@@ -20,6 +21,14 @@ export type ApplicationRegistrationDetails = {
   privacyNoticeVersion: string;
   consentedAt: string;
 };
+
+function refreshApplicationViews() {
+  revalidatePath('/admin/applications');
+  revalidatePath('/admin');
+  revalidatePath('/admin/students');
+  revalidatePath('/admin/classes');
+  revalidatePath('/student');
+}
 
 export async function getApplicationRegistrationDetails(
   applicationId: string
@@ -72,9 +81,18 @@ export async function decideApplication(
 
   if (error) throw new Error(error.message);
 
-  revalidatePath('/admin/applications');
-  revalidatePath('/admin');
-  revalidatePath('/admin/students');
-  revalidatePath('/admin/classes');
-  revalidatePath('/student');
+  refreshApplicationViews();
+}
+
+export async function acceptApplications(applicationIds: string[]) {
+  const ids = normalizeBulkIds(applicationIds, 'application', 'applications');
+  const { supabase } = await requireAdmin();
+  const { data, error } = await supabase.rpc('admin_accept_applications_bulk', {
+    p_application_ids: ids,
+  });
+
+  if (error) throw new Error(error.message);
+
+  refreshApplicationViews();
+  return { processed: Number(data ?? ids.length) };
 }

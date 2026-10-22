@@ -1,14 +1,16 @@
 'use client';
 
-import { useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ApplicationDecision,
   ApplicationRegistrationDetails,
+  acceptApplications,
   decideApplication,
   getApplicationRegistrationDetails,
 } from '../actions/application-actions';
 import { useAdminDialog } from '../useAdminDialog';
+import { MAX_BULK_ACTION_SIZE } from '../../../lib/bulk-actions';
 
 export type ApplicationAdminRow = {
   id: string;
@@ -69,7 +71,11 @@ export default function ApplicationsClient({ rows }: { rows: ApplicationAdminRow
   const [note, setNote] = useState('');
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [bulkMessage, setBulkMessage] = useState('');
+  const [bulkError, setBulkError] = useState('');
   const detailRequest = useRef(0);
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
   const counts = useMemo(() => {
     const result: Record<string, number> = { all: rows.length };
@@ -92,6 +98,100 @@ export default function ApplicationsClient({ rows }: { rows: ApplicationAdminRow
       ].some((value) => String(value ?? '').toLowerCase().includes(q));
     });
   }, [rows, filter, query]);
+
+  const bulkEligible = useMemo(
+    () => visible.filter((row) => row.status === 'pending' && row.classActive),
+    [visible]
+  );
+  const selectedEligibleIds = useMemo(
+    () => bulkEligible.filter((row) => selectedIds.has(row.id)).map((row) => row.id),
+    [bulkEligible, selectedIds]
+  );
+  const allVisibleSelected = bulkEligible.length > 0
+    && bulkEligible.every((row) => selectedIds.has(row.id));
+  const someVisibleSelected = selectedEligibleIds.length > 0 && !allVisibleSelected;
+
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = someVisibleSelected;
+  }, [someVisibleSelected]);
+
+  useEffect(() => {
+    const eligibleIds = new Set(bulkEligible.map((row) => row.id));
+    setSelectedIds((current) => {
+      const next = new Set(Array.from(current).filter((id) => eligibleIds.has(id)));
+      return next.size === current.size ? current : next;
+    });
+  }, [bulkEligible]);
+
+  const clearBulkSelection = () => {
+    setSelectedIds(new Set());
+    setBulkMessage('');
+    setBulkError('');
+  };
+
+  const toggleApplication = (applicationId: string, checked: boolean) => {
+    setBulkMessage('');
+    setBulkError('');
+    if (checked && !selectedIds.has(applicationId) && selectedIds.size >= MAX_BULK_ACTION_SIZE) {
+      setBulkError(`You can accept up to ${MAX_BULK_ACTION_SIZE} applications at a time.`);
+      return;
+    }
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (!checked) {
+        next.delete(applicationId);
+        return next;
+      }
+      if (!next.has(applicationId) && next.size >= MAX_BULK_ACTION_SIZE) return current;
+      next.add(applicationId);
+      return next;
+    });
+  };
+
+  const toggleAllVisible = () => {
+    setBulkMessage('');
+    setBulkError('');
+    if (bulkEligible.length > MAX_BULK_ACTION_SIZE) {
+      setBulkError(
+        `More than ${MAX_BULK_ACTION_SIZE} pending applications are shown. Narrow the search before using Select all, or choose up to ${MAX_BULK_ACTION_SIZE} individually.`
+      );
+      return;
+    }
+    setSelectedIds(
+      allVisibleSelected
+        ? new Set()
+        : new Set(bulkEligible.map((row) => row.id))
+    );
+  };
+
+  const acceptSelected = () => {
+    const ids = selectedEligibleIds.slice(0, MAX_BULK_ACTION_SIZE);
+    if (ids.length === 0 || pending) return;
+    const noun = ids.length === 1 ? 'application' : 'applications';
+    if (!window.confirm(
+      `Accept ${ids.length} selected ${noun}? Acceptance messages will be queued for all accepted students.`
+    )) return;
+
+    setBulkMessage('');
+    setBulkError('');
+    startTransition(async () => {
+      try {
+        const result = await acceptApplications(ids);
+        setSelectedIds(new Set());
+        setBulkMessage(
+          result.processed === 1
+            ? '1 application accepted. Its acceptance message has been queued.'
+            : `${result.processed} applications accepted. Their acceptance messages have been queued.`
+        );
+        router.refresh();
+      } catch (err) {
+        setBulkError(
+          `The result could not be confirmed. ${err instanceof Error ? err.message : 'The applications could not be accepted.'} The list has been refreshed.`
+        );
+        router.refresh();
+      }
+    });
+  };
 
   const open = (row: ApplicationAdminRow) => {
     const request = detailRequest.current + 1;
@@ -137,6 +237,11 @@ export default function ApplicationsClient({ rows }: { rows: ApplicationAdminRow
     startTransition(async () => {
       try {
         await decideApplication(selected.id, decision, note);
+        setSelectedIds((current) => {
+          const next = new Set(current);
+          next.delete(selected.id);
+          return next;
+        });
         setSelected(null);
         setNote('');
         router.refresh();
@@ -155,7 +260,10 @@ export default function ApplicationsClient({ rows }: { rows: ApplicationAdminRow
             <input
               id="admin-application-search"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                clearBulkSelection();
+              }}
               placeholder="Name, email, mobile, class or response ID"
             />
           </div>
@@ -172,12 +280,41 @@ export default function ApplicationsClient({ rows }: { rows: ApplicationAdminRow
             className={`filter ${filter === item ? 'active' : ''}`}
             type="button"
             aria-pressed={filter === item}
-            onClick={() => setFilter(item)}
+            onClick={() => {
+              setFilter(item);
+              clearBulkSelection();
+            }}
           >
             {statusLabel(item)} ({counts[item] ?? 0})
           </button>
         ))}
       </div>
+
+      <div className="bulk-toolbar" aria-busy={pending}>
+        <div>
+          <strong>
+            {selectedEligibleIds.length === 0
+              ? 'Select pending applications to accept'
+              : `${selectedEligibleIds.length} ${selectedEligibleIds.length === 1 ? 'application' : 'applications'} selected`}
+          </strong>
+          <span>
+            {bulkEligible.length > MAX_BULK_ACTION_SIZE
+              ? `More than ${MAX_BULK_ACTION_SIZE} pending applications are shown. Narrow the search to use Select all.`
+              : `Only pending applications for active classes can be selected, up to ${MAX_BULK_ACTION_SIZE} at a time.`}
+          </span>
+        </div>
+        <button
+          className="btn btn-primary"
+          type="button"
+          disabled={pending || selectedEligibleIds.length === 0}
+          onClick={acceptSelected}
+        >
+          {pending ? 'Accepting…' : 'Accept selected'}
+        </button>
+      </div>
+
+      {bulkError && <div className="notice" role="alert">{bulkError}</div>}
+      {bulkMessage && <div className="notice success" role="status">{bulkMessage}</div>}
 
       <div
         className="table-wrap"
@@ -188,6 +325,18 @@ export default function ApplicationsClient({ rows }: { rows: ApplicationAdminRow
         <table>
           <thead>
             <tr>
+              <th className="bulk-select-column">
+                <label className="bulk-select-control">
+                  <input
+                    ref={selectAllRef}
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    disabled={pending || bulkEligible.length === 0 || bulkEligible.length > MAX_BULK_ACTION_SIZE}
+                    onChange={toggleAllVisible}
+                  />
+                    <span className="sr-only">Select shown pending applications, up to {MAX_BULK_ACTION_SIZE}</span>
+                </label>
+              </th>
               <th>Applicant</th>
               <th>Class</th>
               <th>Submitted</th>
@@ -199,10 +348,26 @@ export default function ApplicationsClient({ rows }: { rows: ApplicationAdminRow
           <tbody>
             {visible.length === 0 ? (
               <tr>
-                <td colSpan={6}><span className="small">No applications match this view.</span></td>
+                <td colSpan={7}><span className="small">No applications match this view.</span></td>
               </tr>
             ) : visible.map((row) => (
-              <tr key={row.id}>
+              <tr key={row.id} className={selectedIds.has(row.id) ? 'bulk-row-selected' : undefined}>
+                <td className="bulk-select-column">
+                  <label className="bulk-select-control">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(row.id)}
+                      disabled={
+                        pending
+                        || row.status !== 'pending'
+                        || !row.classActive
+                        || (!selectedIds.has(row.id) && selectedIds.size >= MAX_BULK_ACTION_SIZE)
+                      }
+                      onChange={(event) => toggleApplication(row.id, event.target.checked)}
+                    />
+                    <span className="sr-only">Select application from {row.name}</span>
+                  </label>
+                </td>
                 <td>
                   <strong>{row.name}</strong><br/>
                   <span className="small">{row.email || row.mobile || row.id}</span>
@@ -216,7 +381,7 @@ export default function ApplicationsClient({ rows }: { rows: ApplicationAdminRow
                   </span>
                 </td>
                 <td>{row.classEnrolled} / {row.classCapacity}</td>
-                <td><button className="btn btn-outline" onClick={() => open(row)}>Review</button></td>
+                <td><button className="btn btn-outline" disabled={pending} onClick={() => open(row)}>Review</button></td>
               </tr>
             ))}
           </tbody>
