@@ -1,9 +1,10 @@
 # ASWJ College application — v0.10
 
-Three connected interfaces support the college registration and attendance workflow:
+Four connected interfaces support the college registration and attendance workflow:
 
-- **ASWJ College Admin** — applications, classes, waitlists, attendance, QR check-in, consecutive-absence reviews, suspension/reinstatement, notifications and audit history.
-- **ASWJ College Teacher Attendance** — a mobile-first roll and QR check-in screen limited to each teacher's assigned classes.
+- **ASWJ College Admin** — applications, classes, waitlists, the attendance roster at `/admin/check-in`, consecutive-absence reviews, suspension/reinstatement, notifications and audit history.
+- **ASWJ College Teacher Attendance** — a mobile-first roster at `/teacher/check-in`, limited to each teacher's assigned classes.
+- **ASWJ College Staff Scanner** — an authenticated camera and manual-token check-in screen at `/scanner` for authorised teachers and administrators, with no student roster.
 - **ASWJ College Student Portal** — application outcomes, per-class enrolment and attendance status, warnings, notifications, QR identity and Apple/Google Wallet student passes.
 
 ## v0.10 changes
@@ -13,6 +14,8 @@ Three connected interfaces support the college registration and attendance workf
 - No email, phone, date-of-birth, guardian, medical, allergy or learning data in wallet payloads.
 - Dev/Production safety rails for provider credentials, environment URLs and Supabase project refs.
 - Student Portal wallet actions with the official Google Wallet button and an unchanged QR fallback.
+- Standalone authenticated scanner at `/scanner` for camera scans and manual QR-token entry only; student rosters remain on `/admin/check-in` and `/teacher/check-in`.
+- The scanner uses the same teacher, administrator and super-administrator attendance authorization, including teacher class-assignment restrictions, without exposing a student roster.
 - Next.js 16.4.0 security update and zero known npm audit findings at verification time.
 
 ## v0.9 changes

@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 import { applicationUrl } from '../../lib/auth/application-origin';
-import { safeLoginNext } from '../../lib/auth/login-next';
+import { loginDestination, safeLoginNext } from '../../lib/auth/login-next';
 
 function confirmationRedirect() {
   return applicationUrl('/auth/callback');
@@ -14,13 +14,6 @@ function loginRedirect(error: string, nextPath: string | null, signupMode = fals
   if (signupMode) params.set('mode', 'signup');
   if (nextPath) params.set('next', nextPath);
   redirect(`/login?${params.toString()}`);
-}
-
-function roleDestination(role: string, nextPath: string | null) {
-  if (['admin', 'super_admin'].includes(role)) return '/admin';
-  if (role === 'teacher') return '/teacher/check-in';
-  if (role === 'student' && nextPath) return nextPath;
-  return '/student';
 }
 
 export async function login(formData: FormData) {
@@ -39,7 +32,7 @@ export async function login(formData: FormData) {
   if (userError || !user) loginRedirect('invalid', nextPath);
 
   const role = String(user.app_metadata?.role ?? 'student');
-  redirect(roleDestination(role, nextPath));
+  redirect(loginDestination(role, nextPath));
 }
 
 export async function signup(formData: FormData) {
@@ -81,7 +74,7 @@ export async function signup(formData: FormData) {
 
   // Hosted Supabase normally requires email confirmation. If a session exists,
   // the user can enter the Student Portal immediately; otherwise show confirmation state.
-  if (data.session) redirect(roleDestination('student', nextPath));
+  if (data.session) redirect(loginDestination('student', nextPath));
 
   const params = new URLSearchParams({ created: '1' });
   if (nextPath) params.set('next', nextPath);

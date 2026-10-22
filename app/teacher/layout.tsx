@@ -39,13 +39,16 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           </span>
         </a>
         <div className="teacher-account">
-          <div>
+          <div className="teacher-account-identity">
             <strong>{name}</strong>
             <span>{staff.role === 'teacher' ? 'Teacher' : 'Administrator'}</span>
           </div>
-          <form action={logout}>
-            <button className="btn teacher-signout" type="submit">Sign out</button>
-          </form>
+          <div className="teacher-account-actions">
+            <a className="btn teacher-header-link" href="/scanner">Scanner</a>
+            <form action={logout}>
+              <button className="btn teacher-signout" type="submit">Sign out</button>
+            </form>
+          </div>
         </div>
       </header>
       <main className="teacher-main" id="main-content" tabIndex={-1}>{children}</main>

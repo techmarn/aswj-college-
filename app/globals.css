@@ -233,6 +233,10 @@ tbody tr:hover { background: #fbfcfb; }
 .teacher-account strong, .teacher-account span { display: block; }
 .teacher-account strong { font-size: 14px; }
 .teacher-account span { color: #cfe2dc; font-size: 12px; }
+.teacher-account-actions { display: flex; align-items: center; gap: 8px; }
+.teacher-account-actions form { margin: 0; }
+.teacher-header-link { min-width: 82px; border-color: rgba(255,255,255,.72); color: #fff; }
+.teacher-header-link:hover { border-color: #fff; background: rgba(255,255,255,.1); color: #fff; }
 .teacher-signout { min-width: 94px; border-color: #fff; background: #fff; color: var(--brand-deep); }
 .teacher-signout:hover { background: var(--gold-soft); color: var(--brand-deep); }
 .teacher-main { width: min(1220px,100%); margin: 0 auto; padding: 30px 4px 0; }
@@ -247,6 +251,7 @@ tbody tr:hover { background: #fbfcfb; }
 .checkin-manual-entry { max-width: 560px; margin: 18px auto 0; }
 .checkin-manual-actions input { flex: 1 1 320px; }
 .checkin-row-actions .btn { min-width: 82px; }
+.scanner-result { margin-bottom: 16px; border-color: var(--brand); background: var(--brand-soft); }
 
 /* Student portal */
 .student-portal { width: min(1120px,100%); margin: 0 auto; padding: 28px 18px 60px; }
@@ -436,7 +441,7 @@ tbody tr:hover { background: #fbfcfb; }
   .teacher-header { align-items: flex-start; border-radius: 16px; padding: 13px; }
   .teacher-logo { width: 58px; height: 50px; }
   .teacher-brand strong { font-size: 16px; }
-  .teacher-account > div { display: none; }
+  .teacher-account-identity { display: none; }
   .teacher-main { padding-top: 24px; }
   .checkin-class-summary { padding-top: 0; }
   .checkin-scanner { padding: 14px; }
@@ -484,6 +489,8 @@ tbody tr:hover { background: #fbfcfb; }
   .teacher-header { align-items: center; }
   .teacher-brand small { display: none; }
   .teacher-logo { width: 52px; height: 46px; }
+  .teacher-account-actions { gap: 6px; }
+  .teacher-account-actions .btn { min-width: 0; padding-right: 12px; padding-left: 12px; }
   .teacher-signout { min-width: 84px; }
   .teacher-main .card { padding: 16px; }
 }

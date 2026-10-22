@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { safeLoginNext } from '../../lib/auth/login-next';
+import { loginDestination, safeLoginNext } from '../../lib/auth/login-next';
 import { renderTransactionalEmail } from '../../lib/email/render';
 import type {
   EmailTemplateDefinition,
@@ -175,6 +175,7 @@ for (const templateKey of NON_ACCEPTED_TEMPLATE_KEYS) {
 }
 
 test('post-login destinations use an exact allowlist', () => {
+  assert.equal(safeLoginNext('/scanner'), '/scanner');
   assert.equal(safeLoginNext('/student/apply'), '/student/apply');
   assert.equal(safeLoginNext('/student/pass'), '/student/pass');
   assert.equal(
@@ -183,12 +184,29 @@ test('post-login destinations use an exact allowlist', () => {
   );
   assert.equal(safeLoginNext('https://attacker.example'), null);
   assert.equal(safeLoginNext('//attacker.example'), null);
+  assert.equal(safeLoginNext('/scanner/'), null);
+  assert.equal(safeLoginNext('/scanner/check-in'), null);
+  assert.equal(safeLoginNext('/scanner?mode=admin'), null);
+  assert.equal(safeLoginNext('/scanner#camera'), null);
   assert.equal(safeLoginNext('/api/student/wallet/google'), null);
   assert.equal(safeLoginNext('/student/pass?token=secret'), null);
   assert.equal(safeLoginNext(`/student/calendar/${CLASS_ID}?token=secret`), null);
   assert.equal(safeLoginNext(`/student/calendar/${CLASS_ID}#fragment`), null);
   assert.equal(safeLoginNext('/student/calendar/not-a-uuid'), null);
   assert.equal(safeLoginNext(`/api/student/calendar/${CLASS_ID}`), null);
+});
+
+test('scanner post-login destination is limited to staff roles', () => {
+  for (const role of ['teacher', 'admin', 'super_admin']) {
+    assert.equal(loginDestination(role, '/scanner'), '/scanner');
+  }
+
+  assert.equal(loginDestination('student', '/scanner'), '/student');
+  assert.equal(loginDestination('unknown', '/scanner'), '/student');
+  assert.equal(loginDestination('teacher', null), '/teacher/check-in');
+  assert.equal(loginDestination('admin', null), '/admin');
+  assert.equal(loginDestination('super_admin', null), '/admin');
+  assert.equal(loginDestination('student', '/student/pass'), '/student/pass');
 });
 
 for (const templateKey of [

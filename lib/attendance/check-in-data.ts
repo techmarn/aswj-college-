@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { requireAttendanceStaff } from '../supabase/server';
+import { toScannerClasses, type ScannerClassRow } from './scanner-data';
 
 export type CheckInStudent = {
   enrolmentId: string;
@@ -186,4 +187,17 @@ export async function loadTodayCheckInData() {
   });
 
   return { classes: rows, today, staff };
+}
+
+export async function loadScannerCheckInData() {
+  const staff = await requireAttendanceStaff();
+  const today = todaySydney();
+  const { data, error } = await staff.supabase.rpc('attendance_staff_today_scanner_classes');
+  if (error) throw error;
+
+  return {
+    classes: toScannerClasses((data ?? []) as ScannerClassRow[]),
+    today,
+    staff,
+  };
 }

@@ -31,6 +31,7 @@ function refreshAttendanceViews() {
   revalidatePath('/admin/students');
   revalidatePath('/teacher');
   revalidatePath('/teacher/check-in');
+  revalidatePath('/scanner');
   revalidatePath('/student');
 }
 

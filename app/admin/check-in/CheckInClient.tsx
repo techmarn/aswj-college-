@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { checkInByQr, closeTodayRoll, setManualAttendance } from '../actions/checkin-actions';
+import { closeTodayRoll, setManualAttendance } from '../actions/checkin-actions';
 import { formatClassTime } from '../../../lib/class-time';
 import type { CheckInClass, CheckInStudent } from '../../../lib/attendance/check-in-data';
 
@@ -36,15 +36,9 @@ export default function CheckInClient({
 }) {
   const router = useRouter();
   const [classId, setClassId] = useState(classes[0]?.id ?? '');
-  const [scannerOn, setScannerOn] = useState(false);
-  const [manualToken, setManualToken] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [pending, startTransition] = useTransition();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const scanLock = useRef(false);
-  const lastScan = useRef<{ token: string; at: number } | null>(null);
 
   const selected = useMemo(() => classes.find((c) => c.id === classId) ?? null, [classes, classId]);
   const selectedSchedule = selected
@@ -56,90 +50,6 @@ export default function CheckInClient({
         selected.location || 'No location set',
       ].filter(Boolean).join(' · ')
     : '';
-
-  const stopScanner = () => {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-    setScannerOn(false);
-    scanLock.current = false;
-    lastScan.current = null;
-  };
-
-  useEffect(() => () => {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-  }, []);
-
-  const processToken = (raw: string) => {
-    if (!classId || pending || scanLock.current) return;
-    const normalizedToken = raw.trim();
-    const previous = lastScan.current;
-    if (previous?.token === normalizedToken && Date.now() - previous.at < 8_000) return;
-
-    scanLock.current = true;
-    lastScan.current = { token: normalizedToken, at: Date.now() };
-    setError('');
-    setMessage('');
-
-    startTransition(async () => {
-      try {
-        const result = await checkInByQr(classId, normalizedToken);
-        setMessage(
-          result.alreadyCheckedIn
-            ? `${result.name} already has attendance recorded as ${attendanceLabel(result.status)}. The original record was kept.`
-            : `${result.name} checked in successfully.`
-        );
-        setManualToken('');
-        router.refresh();
-        window.setTimeout(() => { scanLock.current = false; }, 1400);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'The QR code could not be processed.');
-        window.setTimeout(() => { scanLock.current = false; }, 1800);
-      }
-    });
-  };
-
-  const startScanner = async () => {
-    setError('');
-    setMessage('');
-
-    try {
-      const Detector = (window as any).BarcodeDetector;
-      if (!Detector) {
-        setError('This browser does not provide built-in QR scanning. Use the manual token box below or open this page in Chrome/Edge on a supported device.');
-        return;
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
-        audio: false,
-      });
-
-      streamRef.current = stream;
-      setScannerOn(true);
-
-      const video = videoRef.current;
-      if (!video) return;
-      video.srcObject = stream;
-      await video.play();
-
-      const detector = new Detector({ formats: ['qr_code'] });
-
-      const scan = async () => {
-        if (!streamRef.current || !videoRef.current) return;
-        try {
-          const codes = await detector.detect(videoRef.current);
-          const value = codes?.[0]?.rawValue;
-          if (value && !scanLock.current) processToken(value);
-        } catch {}
-        if (streamRef.current) requestAnimationFrame(scan);
-      };
-
-      requestAnimationFrame(scan);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Camera access could not be started.');
-      stopScanner();
-    }
-  };
 
   const manualAttendance = (student: CheckInStudent, status: 'present'|'late'|'absent'|'excused') => {
     if (!selected) return;
@@ -180,16 +90,17 @@ export default function CheckInClient({
       <div className="topbar">
         <div>
           <span className="eyebrow">{audience === 'teacher' ? 'Teacher attendance' : 'Attendance'}</span>
-          <h1>{audience === 'teacher' ? 'Class check-in' : 'QR Check-in'}</h1>
-          <p className="subtitle">Scan student QR codes and manage today’s attendance — {today}.</p>
+          <h1>{audience === 'teacher' ? 'Class roster' : 'Attendance roster'}</h1>
+          <p className="subtitle">Review the roll and record manual attendance — {today}.</p>
         </div>
+        <a className="btn btn-primary" href="/scanner">Open scanner</a>
       </div>
 
       <section className="card">
         <div className="form-row">
           <div className="field">
             <label htmlFor="check-in-class">Select class</label>
-            <select id="check-in-class" value={classId} onChange={(e) => { stopScanner(); setClassId(e.target.value); setMessage(''); setError(''); }}>
+            <select id="check-in-class" value={classId} onChange={(e) => { setClassId(e.target.value); setMessage(''); setError(''); }}>
               {classes.length === 0 && <option value="">No active classes</option>}
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -218,30 +129,7 @@ export default function CheckInClient({
           </div>
         ) : selected.sessionCancelled ? (
           <div className="notice"><strong>Session cancelled</strong>Attendance cannot be recorded for this class today.</div>
-        ) : (
-          <>
-            <div className="checkin-scanner">
-              <video ref={videoRef} playsInline muted className={scannerOn ? 'is-active' : undefined} />
-              {!scannerOn && <><strong>Camera QR scanner</strong><p className="small">The student presents their ASWJ College Student Portal QR code.</p></>}
-              <div className="actions checkin-scanner-actions">
-                {!scannerOn ? (
-                  <button type="button" className="btn btn-primary" disabled={pending} onClick={startScanner}>Start scanner</button>
-                ) : (
-                  <button type="button" className="btn btn-outline" onClick={stopScanner}>Stop scanner</button>
-                )}
-              </div>
-            </div>
-
-            <div className="field checkin-manual-entry">
-              <label htmlFor="manual-qr-token">Manual QR token fallback</label>
-              <div className="actions checkin-manual-actions">
-                <input id="manual-qr-token" autoComplete="off" value={manualToken} onChange={(e) => setManualToken(e.target.value)} placeholder="Paste or type QR token" />
-                <button type="button" className="btn btn-primary" disabled={!manualToken.trim() || pending} onClick={() => processToken(manualToken)}>Check in</button>
-              </div>
-              <span className="small">Use this if camera scanning is unavailable.</span>
-            </div>
-          </>
-        )}
+        ) : null}
       </section>
 
       {selected && (
