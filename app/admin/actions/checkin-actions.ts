@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireAttendanceStaff } from '../../../lib/supabase/server';
 import { normalizeBulkIds, toDatabaseAttendanceStatus } from '../../../lib/bulk-actions';
+import { toCheckInErrorMessage } from '../../../lib/attendance/check-in-errors';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -48,7 +49,7 @@ export async function checkInByQr(classId: string, token: string) {
     p_token: cleaned,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(toCheckInErrorMessage(error.message));
   refreshAttendanceViews();
 
   const row = Array.isArray(data) ? data[0] : data;
