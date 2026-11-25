@@ -1,5 +1,6 @@
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { scheduleImmediateEmailDelivery } from '../../../lib/email/immediate';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 
 const ALLOWED_TYPES = new Set<EmailOtpType>([
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
       type: candidateType,
     });
     if (!error) {
+      scheduleImmediateEmailDelivery('account_welcome');
       return NextResponse.redirect(new URL('/student', request.url));
     }
   }

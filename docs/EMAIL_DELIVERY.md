@@ -94,6 +94,16 @@ For timely application updates, a short interval such as every five minutes is
 appropriate when the selected plan supports it. Never put `CRON_SECRET` in a URL
 or query string.
 
+Successful application, confirmation and administrator workflows also schedule
+a best-effort outbox drain with Next.js `after()`. This normally submits newly
+queued email within seconds without making the user wait for Resend. The durable
+outbox remains the source of truth: an unavailable background task, provider
+retry or larger backlog is picked up by the scheduled worker, and claim leases
+plus the delivery idempotency key prevent concurrent workers from sending a
+duplicate. Bulk application acceptance requests schedule enough bounded queue
+batches for the selected count, with two workers at a time to avoid an
+uncontrolled provider burst.
+
 Vercel references:
 
 - [Cron job configuration](https://vercel.com/docs/cron-jobs)

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { scheduleImmediateEmailDelivery } from '../../../lib/email/immediate';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 
 export async function GET(request: NextRequest) {
@@ -8,6 +9,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      scheduleImmediateEmailDelivery('account_welcome');
       return NextResponse.redirect(new URL('/student', request.url));
     }
   }

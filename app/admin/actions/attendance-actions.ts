@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { scheduleImmediateEmailDelivery } from '../../../lib/email/immediate';
 import { requireAdmin } from '../../../lib/supabase/server';
 
 function refreshAttendanceViews() {
@@ -25,6 +26,7 @@ export async function suspendEnrolment(
   });
 
   if (error) throw new Error(error.message);
+  if (notifyStudent) scheduleImmediateEmailDelivery('enrolment_status');
   refreshAttendanceViews();
 }
 
@@ -52,5 +54,6 @@ export async function reinstateEnrolment(enrolmentId: string, note?: string) {
   });
 
   if (error) throw new Error(error.message);
+  scheduleImmediateEmailDelivery('enrolment_status');
   refreshAttendanceViews();
 }

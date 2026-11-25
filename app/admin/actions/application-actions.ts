@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { scheduleImmediateEmailDelivery } from '../../../lib/email/immediate';
 import { requireAdmin } from '../../../lib/supabase/server';
 import { normalizeBulkIds } from '../../../lib/bulk-actions';
 
@@ -81,6 +82,7 @@ export async function decideApplication(
 
   if (error) throw new Error(error.message);
 
+  scheduleImmediateEmailDelivery('application_decision');
   refreshApplicationViews();
 }
 
@@ -93,6 +95,9 @@ export async function acceptApplications(applicationIds: string[]) {
 
   if (error) throw new Error(error.message);
 
+  scheduleImmediateEmailDelivery('bulk_application_acceptance', {
+    batchCount: Math.ceil(ids.length / 10),
+  });
   refreshApplicationViews();
   return { processed: Number(data ?? ids.length) };
 }

@@ -7,6 +7,7 @@ import {
   MICROSOFT_FORMS_PROVIDER,
   parseMicrosoftFormsSubmission,
 } from '../../../../lib/microsoft-forms';
+import { scheduleImmediateEmailDelivery } from '../../../../lib/email/immediate';
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin';
 
 export const runtime = 'nodejs';
@@ -225,6 +226,9 @@ export async function POST(request: NextRequest) {
         }, { status: 500 });
       }
 
+      if (retried.applicationId) {
+        scheduleImmediateEmailDelivery('forms_application');
+      }
       return Response.json({
         ok: true,
         duplicate: true,
@@ -259,6 +263,9 @@ export async function POST(request: NextRequest) {
     }, { status: 500 });
   }
 
+  if (processing.applicationId) {
+    scheduleImmediateEmailDelivery('forms_application');
+  }
   return Response.json({
     ok: true,
     submissionId: data.id,

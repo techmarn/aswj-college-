@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { scheduleImmediateEmailDelivery } from '../../../lib/email/immediate';
 import { REGISTRATION_PRIVACY_NOTICE_VERSION } from '../../../lib/registration-courses';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import type {
@@ -201,7 +202,10 @@ export async function submitStudentRegistration(
 
   revalidatePath('/student');
   if (result.result === 'already_exists') redirect('/student?already=1');
-  if (result.result === 'created') redirect('/student?applied=1');
+  if (result.result === 'created') {
+    scheduleImmediateEmailDelivery('application_received');
+    redirect('/student?applied=1');
+  }
 
   return errorState('Your application could not be confirmed. Please try again.');
 }

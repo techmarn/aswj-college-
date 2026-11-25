@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { scheduleImmediateEmailDelivery } from '../../../lib/email/immediate';
 import {
   FormsPayloadError,
   isJsonRecord,
@@ -208,6 +209,9 @@ export async function reprocessFormsSubmission(submissionId: string) {
         || current.processing_status === 'needs_review'
       )
     ) {
+      if (current.application_id) {
+        scheduleImmediateEmailDelivery('forms_application');
+      }
       refreshFormsPages();
       return;
     }
@@ -224,6 +228,7 @@ export async function reprocessFormsSubmission(submissionId: string) {
     throw new Error('The Forms submission could not be reprocessed.');
   }
 
+  scheduleImmediateEmailDelivery('forms_application');
   refreshFormsPages();
 }
 
@@ -261,5 +266,6 @@ export async function assignFormsSubmissionCourse(
   });
 
   if (error) throw new Error('The submitted course could not be assigned.');
+  scheduleImmediateEmailDelivery('forms_application');
   refreshFormsPages();
 }
