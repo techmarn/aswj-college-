@@ -33,7 +33,13 @@ export async function GET(request: Request) {
 
   const configuration = getEmailConfigurationStatus();
   if (configuration.state !== 'ready') {
-    return json({ ok: false, error: `email_${configuration.state}` }, 503);
+    return json({
+      ok: false,
+      error: `email_${configuration.state}`,
+      ...(configuration.state === 'not_configured'
+        ? { missing: configuration.missing }
+        : {}),
+    }, 503);
   }
 
   try {
